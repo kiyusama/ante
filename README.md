@@ -79,14 +79,6 @@ git pull origin main
 
 ---
 
-## 今どのブランチにいるか確認
-
-```bash
-git branch
-```
-
----
-
 ## ルール（重要）
 
 - mainに直接pushしない
