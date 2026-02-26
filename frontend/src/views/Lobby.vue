@@ -1,6 +1,8 @@
 <script setup>
 import { useRouter } from 'vue-router'
 const router = useRouter()
+import { ref as dbRef, push, set } from 'firebase/database'
+import { db } from '../firebase/config'
 
 //roomIdを大小英数字で生成
 const generateId = () => {
@@ -10,6 +12,19 @@ const generateId = () => {
     result += chars.charAt(Math.floor(Math.random() * chars.length))
   }
   return result
+}
+
+const createRoom = async () => {
+  const roomId = generateId()
+
+  const newRoomRef = dbRef(db, `rooms/${roomId}`)
+
+  await set(newRoomRef, {
+    pot: 0,
+  })
+
+  //作成後ルームに遷移
+  router.push(`/${roomId}`)
 }
 </script>
 
