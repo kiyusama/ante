@@ -1,8 +1,6 @@
-// src/firebase/config.js
 import { initializeApp } from 'firebase/app'
 import { getDatabase } from 'firebase/database'
 
-// 直接文字を書かず、import.meta.env 経由で読み込む
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
@@ -13,5 +11,5 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 }
 
-const app = initializeApp(firebaseConfig)
-export const db = getDatabase(app)
+export const firebaseApp = initializeApp(firebaseConfig)
+export const db = getDatabase(firebaseApp)

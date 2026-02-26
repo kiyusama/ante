@@ -17,7 +17,8 @@
     "firebase": "^12.9.0",
     "tailwindcss": "^4.2.1",
     "vue": "^3.5.28",
-    "vue-router": "^5.0.2"
+    "vue-router": "^5.0.2",
+    "vuefire": "^3.2.2"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",
