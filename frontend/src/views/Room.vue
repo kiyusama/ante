@@ -21,6 +21,6 @@ async function addChips() {
 </script>
 
 <template>
-  <h2>現在のポット: {{ room?.pot || 0 }} 枚</h2>
+  <h2>現在のポット: {{ room.pot }} 枚</h2>
   <button @click="addChips">ベット</button>
 </template>
