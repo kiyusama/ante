@@ -1,10 +1,12 @@
 <script setup>
+import { useRoute } from 'vue-router'
+const route = useRoute()
 import { useDatabaseObject } from 'vuefire'
 import { ref as dbRef, update, increment } from 'firebase/database'
 import { db } from '@/firebase/config'
 
 // データベースの参照先を指定（"rooms/test_room"という場所）
-const roomRef = dbRef(db, 'rooms/test_room')
+const roomRef = dbRef(db, `rooms/${route.params.roomId}`)
 
 // リアルタイムでデータを取得（room変数の中身が自動で最新に保たれる）
 const room = useDatabaseObject(roomRef)
