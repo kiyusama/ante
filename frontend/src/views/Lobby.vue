@@ -22,6 +22,13 @@ const createRoom = async () => {
 
   await set(newRoomRef, {
     pot: 0,
+    current_turn_id: 0,
+    dealer_id: 0,
+    current_highest_bet: 0,
+    stack: 1000,
+    sb: 5,
+    bb: 10,
+    ante: false,
   })
 
   //作成後ルームに遷移
