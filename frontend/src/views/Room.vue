@@ -1,37 +1,39 @@
 <script setup>
 import { useRoute } from 'vue-router'
-const route = useRoute()
+import { ref } from 'vue'
 import { useDatabaseObject } from 'vuefire'
-import { ref as dbRef, update, increment, set, get } from 'firebase/database'
+import { ref as dbRef, update, increment } from 'firebase/database'
 import { db } from '@/firebase/config'
+const route = useRoute()
 
 // データベースの参照先を指定
-const roomRef = dbRef(db, `rooms/${route.params.roomId}`)
 // リアルタイムでデータを取得(roomもplayerも含まれる)
+const roomRef = dbRef(db, `rooms/${route.params.roomId}`)
 const room = useDatabaseObject(roomRef)
 
+const playerName = ref('')
+const isJoined = ref(false)
+
 const joinGame = async () => {
-  const name = 'test'
+  const name = playerName.value
+  const stack = room.value.stack
 
-  //room情報を取得
-  const room = await get(roomRef)
-  const stack = room.val().stack
-
-  //player情報の確認
-  const playerRef = dbRef(db, `rooms/${route.params.roomId}/players/${name}`)
-  const player = await get(playerRef)
+  const player = room.value.players?.[playerName.value]
 
   //playerが存在しなかったら
-  if (!player.exists()) {
-    await set(playerRef, {
-      name: name,
-      chips: stack,
-      currentBet: 0,
-      seat_index: 0,
-      state: 0,
+  if (!player) {
+    await update(roomRef, {
+      [`players/${name}`]: {
+        name: name,
+        chips: stack,
+        currentBet: 0,
+        seat_index: 0,
+        state: 0,
+      },
     })
-  } else {
   }
+
+  isJoined.value = true
 }
 
 // ボタンを押した時の処理
@@ -40,12 +42,22 @@ async function addChips() {
   await update(roomRef, {
     pot: increment(10),
   })
+
+  await update(roomRef, {
+    [`players/${playerName.value}/chips`]: increment(-10),
+  })
 }
 </script>
 
 <template>
-  <button @click="joinGame">参加</button>
+  <div v-if="isJoined">
+    <h2>pot: {{ room.pot }} 枚</h2>
+    <h2>chips: {{ room.players[playerName].chips }} 枚</h2>
+    <button @click="addChips">ベット</button>
+  </div>
 
-  <h2>現在のポット: {{ room.pot }} 枚</h2>
-  <button @click="addChips">ベット</button>
+  <div v-else>
+    <input v-model="playerName" />
+    <button @click="joinGame">参加</button>
+  </div>
 </template>
