@@ -1,6 +1,6 @@
 <script setup>
 import { useRoute } from 'vue-router'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useDatabaseObject } from 'vuefire'
 import { ref as dbRef, update, increment } from 'firebase/database'
 import { db } from '@/firebase/config'
@@ -18,17 +18,19 @@ const isJoined = ref(false)
 const joinGame = async () => {
   const name = playerName.value
   const stack = room.value.stack
+  const currentPlayersCount = room.value.player_count
 
   const player = room.value.players?.[playerName.value]
 
   //playerが存在しなかったら
   if (!player) {
     await update(roomRef, {
+      player_count: increment(1),
       [`players/${name}`]: {
         name: name,
         chips: stack,
         current_bet: 0,
-        seat_index: 0,
+        seat_index: currentPlayersCount,
         state: 0,
       },
     })
@@ -39,18 +41,25 @@ const joinGame = async () => {
 
 //支払い可能か
 const isAbleToPay = (bill) => {
-  if (bill > room.value.players[playerName.value]) {
+  if (bill > room.value.players[playerName.value].chips) {
     return false
   }
   return true
 }
 
+//自分のターンか
+const isMyTurn = computed(() => {
+  if (room.value.current_turn_id == room.value.players[playerName.value].seat_index) {
+    return true
+  }
+  return false
+})
+
 // bet/raise action
 const bet = async (betAmount) => {
   const currentHighestBet = room.value.current_highest_bet
-  const totalBet = betAmount + room.value.players[playerName.value].current_bet
 
-  if (totalBet <= currentHighestBet || !isAbleToPay(betAmount)) {
+  if (betAmount <= currentHighestBet || !isAbleToPay(betAmount)) {
     alert("you can't bet")
     return
   }
@@ -58,9 +67,8 @@ const bet = async (betAmount) => {
   await update(roomRef, {
     pot: increment(betAmount),
     current_turn_id: increment(1),
-    current_highest_bet: totalBet,
-    [`players/${playerName.value}/chips`]: increment(-betAmount),
-    [`players/${playerName.value}/current_bet`]: totalBet,
+    current_highest_bet: betAmount,
+    [`players/${playerName.value}/current_bet`]: betAmount,
   })
 }
 
@@ -77,7 +85,6 @@ const call = async () => {
   await update(roomRef, {
     pot: increment(callAmount),
     current_turn_id: increment(1),
-    [`players/${playerName.value}/chips`]: increment(-callAmount),
     [`players/${playerName.value}/current_bet`]: currentHighestBet,
   })
 }
@@ -93,15 +100,28 @@ const check = async () => {
     current_turn_id: increment(1),
   })
 }
+
+//fold action
+const fold = async () => {
+  await update(roomRef, {
+    current_turn_id: increment(1),
+  })
+}
 </script>
 
 <template>
   <div v-if="isJoined">
     <h2>pot: {{ room.pot }} 枚</h2>
     <h2>chips: {{ room.players[playerName].chips }} 枚</h2>
-    <button @click="bet(Math.floor(room.pot / 2))">bet</button>
-    <button @click="call">call</button>
-    <button @click="check">check</button>
+
+    <div v-if="isMyTurn">
+      <button @click="bet(20)">initial bet</button>
+
+      <button @click="bet(Math.floor(room.pot / 2))">bet</button>
+      <button @click="call">call</button>
+      <button @click="check">check</button>
+      <button @click="fold">fold</button>
+    </div>
   </div>
 
   <div v-else>
