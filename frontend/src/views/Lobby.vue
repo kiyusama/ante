@@ -23,14 +23,8 @@ const createRoom = async () => {
   await set(newRoomRef, {
     pot: 0,
     player_count: 0,
-    current_turn_id: 0,
-    dealer_id: 0,
-    last_aggressor_id: 2, //bbの席位置
     current_highest_bet: 10, //bbと揃える
     stack: 1000,
-    sb: 5,
-    bb: 10,
-    ante: false,
   })
 
   //作成後ルームに遷移
