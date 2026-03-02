@@ -73,6 +73,12 @@ const calcNextTurnId = () => {
   return nextTurnId
 }
 
+//take action
+//1ハンドの終了
+const take = async () => {
+  const reward = room.value.pot
+}
+
 // bet/raise action
 const bet = async (betAmount) => {
   const currentHighestBet = room.value.current_highest_bet
@@ -84,7 +90,7 @@ const bet = async (betAmount) => {
 
   await update(roomRef, {
     pot: increment(betAmount),
-    current_turn_id: increment(1),
+    current_turn_id: calcNextTurnId(),
     last_aggressor: room.value.players[playerName.value].seat_index,
     current_highest_bet: betAmount,
     [`players/${playerName.value}/current_bet`]: betAmount,
@@ -103,7 +109,7 @@ const call = async () => {
 
   await update(roomRef, {
     pot: increment(callAmount),
-    current_turn_id: increment(1),
+    current_turn_id: calcNextTurnId(),
     [`players/${playerName.value}/current_bet`]: currentHighestBet,
   })
 }
@@ -116,14 +122,14 @@ const check = async () => {
   }
 
   await update(roomRef, {
-    current_turn_id: increment(1),
+    current_turn_id: calcNextTurnId(),
   })
 }
 
 //fold action
 const fold = async () => {
   await update(roomRef, {
-    current_turn_id: increment(1),
+    current_turn_id: calcNextTurnId(),
     [`players/${playerName.value}/state`]: 'folded',
   })
 }
@@ -141,6 +147,8 @@ const fold = async () => {
       <button @click="call">call</button>
       <button @click="check">check</button>
       <button @click="fold">fold</button>
+
+      <button @click="take">take</button>
     </div>
   </div>
 
