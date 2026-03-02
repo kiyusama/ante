@@ -7,13 +7,14 @@ import { db } from '@/firebase/config'
 const route = useRoute()
 
 // データベースの参照先を指定
-// リアルタイムでデータを取得(roomもplayerも含まれる)
+// リアルタイムでデータを取得(room情報もplayer情報も含まれる)
 const roomRef = dbRef(db, `rooms/${route.params.roomId}`)
 const room = useDatabaseObject(roomRef)
 
 const playerName = ref('')
 const isJoined = ref(false)
 
+// ゲームへの参加
 const joinGame = async () => {
   const name = playerName.value
   const stack = room.value.stack
@@ -26,7 +27,7 @@ const joinGame = async () => {
       [`players/${name}`]: {
         name: name,
         chips: stack,
-        currentBet: 0,
+        current_bet: 0,
         seat_index: 0,
         state: 0,
       },
@@ -36,15 +37,60 @@ const joinGame = async () => {
   isJoined.value = true
 }
 
-// ボタンを押した時の処理
-async function addChips() {
-  // potの数値を10増やす
-  await update(roomRef, {
-    pot: increment(10),
-  })
+//支払い可能か
+const isAbleToPay = (bill) => {
+  if (bill > room.value.players[playerName.value]) {
+    return false
+  }
+  return true
+}
+
+// bet/raise action
+const bet = async (betAmount) => {
+  const currentHighestBet = room.value.current_highest_bet
+  const totalBet = betAmount + room.value.players[playerName.value].current_bet
+
+  if (totalBet <= currentHighestBet || !isAbleToPay(betAmount)) {
+    alert("you can't bet")
+    return
+  }
 
   await update(roomRef, {
-    [`players/${playerName.value}/chips`]: increment(-10),
+    pot: increment(betAmount),
+    current_turn_id: increment(1),
+    current_highest_bet: totalBet,
+    [`players/${playerName.value}/chips`]: increment(-betAmount),
+    [`players/${playerName.value}/current_bet`]: totalBet,
+  })
+}
+
+//call action
+const call = async () => {
+  const currentHighestBet = room.value.current_highest_bet
+  const callAmount = currentHighestBet - room.value.players[playerName.value].current_bet
+
+  if (!isAbleToPay(callAmount)) {
+    alert("you can't call")
+    return
+  }
+
+  await update(roomRef, {
+    pot: increment(callAmount),
+    current_turn_id: increment(1),
+    [`players/${playerName.value}/chips`]: increment(-callAmount),
+    [`players/${playerName.value}/current_bet`]: currentHighestBet,
+  })
+}
+
+//check action
+const check = async () => {
+  if (room.value.players[playerName.value].current_bet < room.value.current_highest_bet) {
+    alert("you can't check")
+    return
+  }
+
+  await update(roomRef, {
+    current_turn_id: increment(1),
   })
 }
 </script>
@@ -53,7 +99,9 @@ async function addChips() {
   <div v-if="isJoined">
     <h2>pot: {{ room.pot }} 枚</h2>
     <h2>chips: {{ room.players[playerName].chips }} 枚</h2>
-    <button @click="addChips">ベット</button>
+    <button @click="bet(Math.floor(room.pot / 2))">bet</button>
+    <button @click="call">call</button>
+    <button @click="check">check</button>
   </div>
 
   <div v-else>
