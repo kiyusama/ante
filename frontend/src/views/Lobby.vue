@@ -25,7 +25,8 @@ const createRoom = async () => {
     player_count: 0,
     current_turn_id: 0,
     dealer_id: 0,
-    current_highest_bet: 10,
+    last_aggressor: 2, //bbの席位置
+    current_highest_bet: 10, //bbと揃える
     stack: 1000,
     sb: 5,
     bb: 10,

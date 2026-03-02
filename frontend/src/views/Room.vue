@@ -31,7 +31,7 @@ const joinGame = async () => {
         chips: stack,
         current_bet: 0,
         seat_index: currentPlayersCount,
-        state: 0,
+        state: 'active', //active, folded, dead
       },
     })
   }
@@ -55,6 +55,24 @@ const isMyTurn = computed(() => {
   return false
 })
 
+//次のターンIDを計算
+const calcNextTurnId = () => {
+  const totalPlayers = room.value.player_count
+  let nextTurnId = (room.value.players[playerName.value].seat_index + 1) % totalPlayers
+  //playersを配列に落とし込む
+  const players = Object.values(room.value.players)
+
+  while (true) {
+    //隣の人を探す
+    const nextPlayer = players.find((p) => p.seat_index === nextTurnId)
+    if (nextPlayer.state == 'active') {
+      break // アクティブなプレイヤーを見つけたら終わり
+    }
+    nextTurnId = (nextTurnId + 1) % totalPlayers
+  }
+  return nextTurnId
+}
+
 // bet/raise action
 const bet = async (betAmount) => {
   const currentHighestBet = room.value.current_highest_bet
@@ -67,6 +85,7 @@ const bet = async (betAmount) => {
   await update(roomRef, {
     pot: increment(betAmount),
     current_turn_id: increment(1),
+    last_aggressor: room.value.players[playerName.value].seat_index,
     current_highest_bet: betAmount,
     [`players/${playerName.value}/current_bet`]: betAmount,
   })
@@ -105,6 +124,7 @@ const check = async () => {
 const fold = async () => {
   await update(roomRef, {
     current_turn_id: increment(1),
+    [`players/${playerName.value}/state`]: 'folded',
   })
 }
 </script>
