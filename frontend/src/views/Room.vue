@@ -14,6 +14,8 @@ const room = useDatabaseObject(roomRef)
 const playerName = ref('')
 const isJoined = ref(false)
 
+const betAmount = ref(0)
+
 //自分の情報を取得
 const currentPlayer = computed(() => {
   return room.value?.players?.[playerName.value]
@@ -39,6 +41,15 @@ const joinGame = async () => {
   }
 
   isJoined.value = true
+}
+
+//dealer positionの人が押す
+//ゲーム開始の合図
+const declareDealer = async () => {
+  await update(roomRef, {
+    waiting: false,
+    [`players/${playerName.value}/is_dealer`]: true,
+  })
 }
 
 //支払い可能か
@@ -107,6 +118,7 @@ const take = async () => {
   const updates = {
     pot: 0,
     current_highest_bet: 0,
+    waiting: true,
     [`players/${playerName.value}/chips`]: increment(potValue),
   }
   //すべてのplayerのcurrent_betを初期化
@@ -124,13 +136,30 @@ const take = async () => {
     <h2>pot: {{ room.pot }} 枚</h2>
     <h2>chips: {{ room.players[playerName].chips }} 枚</h2>
 
-    <button @click="bet(20)">initial bet</button>
+    <div>
+      <input
+        type="number"
+        v-model.number="betAmount"
+        :min="room.currentHighestBet"
+        :max="currentPlayer?.chips"
+      />
+      <button @click="bet(betAmount)">bet</button>
+    </div>
 
-    <button @click="bet(Math.floor(room.pot / 2))">bet</button>
-    <button @click="call">call</button>
-    <button @click="fold">fold</button>
+    <div>
+      <button @click="call">call</button>
+    </div>
+    <div>
+      <button @click="fold">fold</button>
+    </div>
 
-    <button @click="take">take</button>
+    <div>
+      <button @click="take">take</button>
+    </div>
+
+    <div v-if="room.waiting">
+      <button @click="declareDealer">dealer</button>
+    </div>
 
     <div v-if="currentPlayer.is_dealer">
       <button @click="proceedRound">next round</button>
