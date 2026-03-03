@@ -49,17 +49,18 @@ const isAbleToPay = (bill) => {
 // bet/raise action
 const bet = async (betAmount) => {
   const currentHighestBet = room.value.current_highest_bet
+  const newBet = betAmount + currentPlayer.value.current_bet
 
-  if (betAmount <= currentHighestBet || !isAbleToPay(betAmount)) {
+  if (newBet <= currentHighestBet || !isAbleToPay(betAmount)) {
     alert("you can't bet")
     return
   }
 
   await update(roomRef, {
     pot: increment(betAmount),
-    current_highest_bet: betAmount,
+    current_highest_bet: newBet,
     [`players/${playerName.value}/chips`]: increment(-betAmount),
-    [`players/${playerName.value}/current_bet`]: betAmount,
+    [`players/${playerName.value}/current_bet`]: increment(betAmount),
   })
 }
 
@@ -102,9 +103,11 @@ const proceedRound = async () => {
 
 //potの獲得で1ハンド終了
 const take = async () => {
+  const potValue = room.value.pot
   const updates = {
     pot: 0,
     current_highest_bet: 0,
+    [`players/${playerName.value}/chips`]: increment(potValue),
   }
   //すべてのplayerのcurrent_betを初期化
   Object.keys(room.value.players).forEach((playerNameKey) => {
@@ -125,7 +128,6 @@ const take = async () => {
 
     <button @click="bet(Math.floor(room.pot / 2))">bet</button>
     <button @click="call">call</button>
-    <button @click="check">check</button>
     <button @click="fold">fold</button>
 
     <button @click="take">take</button>
