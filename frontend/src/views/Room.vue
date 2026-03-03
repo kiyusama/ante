@@ -14,6 +14,8 @@ const room = useDatabaseObject(roomRef)
 const playerName = ref('')
 const isJoined = ref(false)
 
+const betAmount = ref(0)
+
 //自分の情報を取得
 const currentPlayer = computed(() => {
   return room.value?.players?.[playerName.value]
@@ -124,9 +126,9 @@ const take = async () => {
     <h2>pot: {{ room.pot }} 枚</h2>
     <h2>chips: {{ room.players[playerName].chips }} 枚</h2>
 
-    <button @click="bet(20)">initial bet</button>
+    <input type="number" v-model.number="betAmount" :min="0" :max="currentPlayer?.chips" />
+    <button @click="bet(betAmount)">bet</button>
 
-    <button @click="bet(Math.floor(room.pot / 2))">bet</button>
     <button @click="call">call</button>
     <button @click="fold">fold</button>
 
