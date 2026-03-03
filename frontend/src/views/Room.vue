@@ -80,14 +80,6 @@ const call = async () => {
   })
 }
 
-//check action
-const check = async () => {
-  if (currentPlayer.value.current_bet < room.value.current_highest_bet) {
-    alert("you can't check")
-    return
-  }
-}
-
 //fold action
 const fold = async () => {
   await update(roomRef, {
