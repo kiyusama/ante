@@ -23,7 +23,7 @@ const createRoom = async () => {
   await set(newRoomRef, {
     pot: 0,
     player_count: 0,
-    current_highest_bet: 10, //bbと揃える
+    current_highest_bet: 0,
     stack: 1000,
   })
 
