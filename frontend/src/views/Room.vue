@@ -1,6 +1,6 @@
 <script setup>
 import { useRoute } from 'vue-router'
-import { computed, ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useDatabaseObject } from 'vuefire'
 import { ref as dbRef, update, increment } from 'firebase/database'
 import { db } from '@/firebase/config'
@@ -14,24 +14,26 @@ const room = useDatabaseObject(roomRef)
 const playerName = ref('')
 const isJoined = ref(false)
 
+//自分の情報を取得
+const currentPlayer = computed(() => {
+  return room.value?.players?.[playerName.value]
+})
+
 // ゲームへの参加
 const joinGame = async () => {
   const name = playerName.value
   const stack = room.value.stack
-  const currentPlayersCount = room.value.player_count
-
-  const player = room.value.players?.[playerName.value]
 
   //playerが存在しなかったら
-  if (!player) {
+  if (!currentPlayer.value) {
     await update(roomRef, {
       player_count: increment(1),
       [`players/${name}`]: {
         name: name,
         chips: stack,
         current_bet: 0,
-        seat_index: currentPlayersCount,
-        state: 'active', //active, folded, dead
+        state: 'active',
+        is_dealer: false,
       },
     })
   }
@@ -41,60 +43,31 @@ const joinGame = async () => {
 
 //支払い可能か
 const isAbleToPay = (bill) => {
-  if (bill > room.value.players[playerName.value].chips) {
-    return false
-  }
-  return true
-}
-
-//自分のターンか
-const isMyTurn = computed(() => {
-  if (room.value.current_turn_id == room.value.players[playerName.value].seat_index) {
-    return true
-  }
-  return false
-})
-
-//次のターンIDを計算
-const calcNextTurnId = () => {
-  const totalPlayers = room.value.player_count
-  let nextTurnId = (room.value.players[playerName.value].seat_index + 1) % totalPlayers
-  //playersを配列に落とし込む
-  const players = Object.values(room.value.players)
-
-  while (true) {
-    //隣の人を探す
-    const nextPlayer = players.find((p) => p.seat_index === nextTurnId)
-    if (nextPlayer.state == 'active') {
-      break // アクティブなプレイヤーを見つけたら終わり
-    }
-    nextTurnId = (nextTurnId + 1) % totalPlayers
-  }
-  return nextTurnId
+  return bill <= currentPlayer.value.chips
 }
 
 // bet/raise action
 const bet = async (betAmount) => {
   const currentHighestBet = room.value.current_highest_bet
+  const newBet = betAmount + currentPlayer.value.current_bet
 
-  if (betAmount <= currentHighestBet || !isAbleToPay(betAmount)) {
+  if (newBet <= currentHighestBet || !isAbleToPay(betAmount)) {
     alert("you can't bet")
     return
   }
 
   await update(roomRef, {
     pot: increment(betAmount),
-    current_turn_id: increment(1),
-    last_aggressor: room.value.players[playerName.value].seat_index,
-    current_highest_bet: betAmount,
-    [`players/${playerName.value}/current_bet`]: betAmount,
+    current_highest_bet: newBet,
+    [`players/${playerName.value}/chips`]: increment(-betAmount),
+    [`players/${playerName.value}/current_bet`]: increment(betAmount),
   })
 }
 
 //call action
 const call = async () => {
   const currentHighestBet = room.value.current_highest_bet
-  const callAmount = currentHighestBet - room.value.players[playerName.value].current_bet
+  const callAmount = currentHighestBet - currentPlayer.value.current_bet
 
   if (!isAbleToPay(callAmount)) {
     alert("you can't call")
@@ -103,29 +76,46 @@ const call = async () => {
 
   await update(roomRef, {
     pot: increment(callAmount),
-    current_turn_id: increment(1),
     [`players/${playerName.value}/current_bet`]: currentHighestBet,
-  })
-}
-
-//check action
-const check = async () => {
-  if (room.value.players[playerName.value].current_bet < room.value.current_highest_bet) {
-    alert("you can't check")
-    return
-  }
-
-  await update(roomRef, {
-    current_turn_id: increment(1),
+    [`players/${playerName.value}/chips`]: increment(-callAmount),
   })
 }
 
 //fold action
 const fold = async () => {
   await update(roomRef, {
-    current_turn_id: increment(1),
     [`players/${playerName.value}/state`]: 'folded',
   })
+}
+
+//ラウンドを進める
+//dealer positionのみ可能
+const proceedRound = async () => {
+  const updates = {
+    current_highest_bet: 0,
+  }
+  //すべてのplayerのcurrent_betを初期化
+  Object.keys(room.value.players).forEach((playerNameKey) => {
+    updates[`players/${playerNameKey}/current_bet`] = 0
+  })
+  await update(roomRef, updates)
+}
+
+//potの獲得で1ハンド終了
+const take = async () => {
+  const potValue = room.value.pot
+  const updates = {
+    pot: 0,
+    current_highest_bet: 0,
+    [`players/${playerName.value}/chips`]: increment(potValue),
+  }
+  //すべてのplayerのcurrent_betを初期化
+  Object.keys(room.value.players).forEach((playerNameKey) => {
+    updates[`players/${playerNameKey}/current_bet`] = 0
+    updates[`players/${playerNameKey}/state`] = 'active'
+    updates[`players/${playerNameKey}/is_dealer`] = false
+  })
+  await update(roomRef, updates)
 }
 </script>
 
@@ -134,13 +124,16 @@ const fold = async () => {
     <h2>pot: {{ room.pot }} 枚</h2>
     <h2>chips: {{ room.players[playerName].chips }} 枚</h2>
 
-    <div v-if="isMyTurn">
-      <button @click="bet(20)">initial bet</button>
+    <button @click="bet(20)">initial bet</button>
 
-      <button @click="bet(Math.floor(room.pot / 2))">bet</button>
-      <button @click="call">call</button>
-      <button @click="check">check</button>
-      <button @click="fold">fold</button>
+    <button @click="bet(Math.floor(room.pot / 2))">bet</button>
+    <button @click="call">call</button>
+    <button @click="fold">fold</button>
+
+    <button @click="take">take</button>
+
+    <div v-if="currentPlayer.is_dealer">
+      <button @click="proceedRound">next round</button>
     </div>
   </div>
 
