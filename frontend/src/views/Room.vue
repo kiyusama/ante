@@ -105,7 +105,21 @@ const proceedRound = async () => {
   Object.keys(room.value.players).forEach((playerNameKey) => {
     updates[`players/${playerNameKey}/current_bet`] = 0
   })
+  await update(roomRef, updates)
+}
 
+//potの獲得で1ハンド終了
+const take = async () => {
+  const updates = {
+    pot: 0,
+    current_highest_bet: 0,
+  }
+  //すべてのplayerのcurrent_betを初期化
+  Object.keys(room.value.players).forEach((playerNameKey) => {
+    updates[`players/${playerNameKey}/current_bet`] = 0
+    updates[`players/${playerNameKey}/state`] = 'active'
+    updates[`players/${playerNameKey}/is_dealer`] = false
+  })
   await update(roomRef, updates)
 }
 </script>
