@@ -113,7 +113,7 @@ const call = async () => {
   const currentHighestBet = room.value.current_highest_bet
   const callAmount = currentHighestBet - currentPlayer.value.current_bet
 
-  if (!isAbleToPay(callAmount)) {
+  if (!isAbleToPay(callAmount) || currentHighestBet == currentPlayer.value.current_bet) {
     alert("you can't call")
     return
   }
@@ -173,10 +173,6 @@ const take = async () => {
 
 <template>
   <div v-if="isJoined">
-    <div>
-      <button @click="undo">undo</button>
-    </div>
-
     <h2>pot: {{ room.pot }} 枚</h2>
     <h2>chips: {{ room.players[playerName].chips }} 枚</h2>
 
@@ -204,7 +200,12 @@ const take = async () => {
     </div>
 
     <div v-if="currentPlayer.is_dealer">
-      <button @click="proceedRound">next round</button>
+      <div>
+        <button @click="proceedRound">next round</button>
+      </div>
+      <div>
+        <button @click="undo">undo</button>
+      </div>
     </div>
   </div>
 
