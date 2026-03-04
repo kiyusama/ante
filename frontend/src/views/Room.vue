@@ -15,6 +15,16 @@ import {
   ForwardIcon,
   ArrowUturnLeftIcon,
 } from '@heroicons/vue/24/solid'
+import { Dialog, DialogPanel, DialogTitle, TransitionRoot, TransitionChild } from '@headlessui/vue'
+
+//headless ui用の表示管理
+const isWinnerDialogOpen = ref(false)
+const openWinnerDialog = () => {
+  isWinnerDialogOpen.value = true
+}
+const closeWinnerDialog = () => {
+  isWinnerDialogOpen.value = false
+}
 const route = useRoute()
 
 // データベースの参照先を指定
@@ -37,6 +47,14 @@ const currentPlayer = computed(() => {
   return room.value?.players?.[playerName.value]
 })
 
+//activeなユーザ一覧を取得
+const activePlayers = computed(() => {
+  if (!room.value?.players) return []
+  return Object.values(room.value.players).filter(
+    (p) => p.state === 'active' || p.state === 'all_in',
+  )
+})
+
 // ゲームへの参加
 const joinGame = async () => {
   const name = playerName.value
@@ -57,46 +75,6 @@ const joinGame = async () => {
   }
 
   isJoined.value = true
-}
-
-const saveSnap = async () => {
-  // history情報とそれ以外に分けて取り出す
-  const { history, ...currentState } = room.value
-
-  let newHistory = history || []
-
-  // 履歴の最大数を制限(10個まで)
-  newHistory = [...newHistory.slice(-9), currentState]
-
-  await update(roomRef, {
-    history: newHistory,
-  })
-}
-
-const undo = async () => {
-  let currentHistory = room.value.history || []
-
-  if (currentHistory.length === 0) {
-    alert('no histories')
-    return
-  }
-  const previousState = currentHistory.pop()
-
-  await set(roomRef, {
-    ...previousState,
-    history: currentHistory,
-  })
-}
-
-//dealer positionの人が押す
-//ゲーム開始の合図
-const declareDealer = async () => {
-  await saveSnap()
-
-  await update(roomRef, {
-    waiting: false,
-    [`players/${playerName.value}/is_dealer`]: true,
-  })
 }
 
 //支払い可能か
@@ -142,8 +120,19 @@ const call = async () => {
   })
 }
 
+//dealer positionの人が押す
+//ゲーム開始の合図
+const declareDealer = async () => {
+  await saveSnap()
+
+  await update(roomRef, {
+    waiting: false,
+    [`players/${playerName.value}/is_dealer`]: true,
+  })
+}
+
 //ラウンドを進める
-//dealer positionのみ可能
+//dealer専用
 const proceedRound = async () => {
   await saveSnap()
 
@@ -165,8 +154,9 @@ const proceedRound = async () => {
   await update(roomRef, updates)
 }
 
-//potの獲得で1ハンド終了
-const take = async () => {
+//potを勝者に渡す
+//dealer専用
+const pushPot = async (winnerName) => {
   await saveSnap()
 
   const potValue = room.value.pot
@@ -174,7 +164,7 @@ const take = async () => {
     pot: 0,
     current_highest_bet: 0,
     waiting: true,
-    [`players/${playerName.value}/chips`]: increment(potValue),
+    [`players/${winnerName}/chips`]: increment(potValue),
   }
   //すべてのplayerのcurrent_betを初期化
   Object.keys(room.value.players).forEach((playerNameKey) => {
@@ -184,11 +174,43 @@ const take = async () => {
   })
   await update(roomRef, updates)
 }
+
+//状態のスナップショットを撮る
+const saveSnap = async () => {
+  // history情報とそれ以外に分けて取り出す
+  const { history, ...currentState } = room.value
+
+  let newHistory = history || []
+
+  // 履歴の最大数を制限(10個まで)
+  newHistory = [...newHistory.slice(-9), currentState]
+
+  await update(roomRef, {
+    history: newHistory,
+  })
+}
+
+//巻き戻し
+//dealer専用
+const undo = async () => {
+  let currentHistory = room.value.history || []
+
+  if (currentHistory.length === 0) {
+    alert('no histories')
+    return
+  }
+  const previousState = currentHistory.pop()
+
+  await set(roomRef, {
+    ...previousState,
+    history: currentHistory,
+  })
+}
 </script>
 
 <template>
   <div
-    class="min-h-screen bg-slate-900 text-slate-100 font-sans flex flex-col items-center py-8 px-4"
+    class="min-h-screen bg-slate-900 text-slate-100 font-sans flex flex-col items-center py-8 px-4 relative"
   >
     <div v-if="isJoined" class="w-full max-w-md flex flex-col gap-6">
       <div class="bg-slate-800 rounded-2xl shadow-xl p-6 border border-slate-700">
@@ -237,8 +259,7 @@ const take = async () => {
             @click="declareDealer"
             class="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 transition-colors text-white font-bold py-4 px-6 rounded-xl shadow-lg shadow-blue-900/20 active:scale-95"
           >
-            <StarIcon class="w-6 h-6" />
-            Declare Dealer & Start
+            <StarIcon class="w-6 h-6" /> Declare Dealer & Start
           </button>
         </div>
 
@@ -273,13 +294,6 @@ const take = async () => {
               <CheckCircleIcon class="w-6 h-6 text-emerald-400" />
               <span>Call {{ callAmount > 0 ? '+' + callAmount : '' }}</span>
             </button>
-            <button
-              @click="take"
-              class="flex-1 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-yellow-400 to-amber-600 hover:to-amber-500 transition-colors text-slate-900 font-black py-3 px-4 rounded-xl shadow-lg shadow-amber-900/20 active:scale-95"
-            >
-              <TrophyIcon class="w-6 h-6" />
-              <span>Take Pot</span>
-            </button>
           </div>
         </div>
       </div>
@@ -306,13 +320,20 @@ const take = async () => {
           >
             <ArrowUturnLeftIcon class="w-5 h-5" /> Undo
           </button>
+          <button
+            @click="openWinnerDialog"
+            class="flex-1 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-yellow-400 to-amber-600 hover:to-amber-500 transition-colors text-slate-900 font-black py-3 px-4 rounded-xl shadow-lg shadow-amber-900/20 active:scale-95"
+          >
+            <TrophyIcon class="w-6 h-6" />
+            <span>Push Pot</span>
+          </button>
         </div>
       </div>
     </div>
 
     <div
       v-else
-      class="w-full max-w-sm m-auto bg-slate-800 rounded-2xl shadow-2xl p-8 border border-slate-700"
+      class="w-full max-w-sm m-auto bg-slate-800 rounded-2xl shadow-2xl p-8 border border-slate-700 mt-20"
     >
       <div class="text-center mb-8">
         <div
@@ -343,5 +364,82 @@ const take = async () => {
         </button>
       </div>
     </div>
+
+    <TransitionRoot appear :show="isWinnerDialogOpen" as="template">
+      <Dialog as="div" @close="closeWinnerDialog" class="relative z-50">
+        <TransitionChild
+          as="template"
+          enter="duration-300 ease-out"
+          enter-from="opacity-0"
+          enter-to="opacity-100"
+          leave="duration-200 ease-in"
+          leave-from="opacity-100"
+          leave-to="opacity-0"
+        >
+          <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" />
+        </TransitionChild>
+
+        <div class="fixed inset-0 overflow-y-auto">
+          <div class="flex min-h-full items-center justify-center p-4 text-center">
+            <TransitionChild
+              as="template"
+              enter="duration-300 ease-out"
+              enter-from="opacity-0 scale-95"
+              enter-to="opacity-100 scale-100"
+              leave="duration-200 ease-in"
+              leave-from="opacity-100 scale-100"
+              leave-to="opacity-0 scale-95"
+            >
+              <DialogPanel
+                class="w-full max-w-sm transform overflow-hidden rounded-2xl bg-slate-800 p-6 text-left align-middle shadow-2xl transition-all border border-slate-700"
+              >
+                <DialogTitle
+                  as="h3"
+                  class="text-xl font-black leading-6 text-white mb-4 flex items-center gap-2"
+                >
+                  <TrophyIcon class="w-6 h-6 text-yellow-500" /> Select Winner
+                </DialogTitle>
+
+                <p class="text-sm text-slate-400 mb-4">
+                  Pot: <span class="font-bold text-yellow-500">{{ room?.pot }} chips</span>
+                </p>
+
+                <div class="space-y-3">
+                  <button
+                    v-for="player in activePlayers"
+                    :key="player.name"
+                    @click="pushPot(player.name)"
+                    class="w-full flex items-center justify-between p-4 rounded-xl bg-slate-700/50 hover:bg-slate-600 transition-colors border border-slate-600 active:scale-95"
+                  >
+                    <span class="text-white font-bold">{{ player.name }}</span>
+                    <span
+                      class="text-xs font-semibold px-2 py-1 rounded-full bg-slate-800 text-slate-300"
+                    >
+                      {{ player.state }}
+                    </span>
+                  </button>
+
+                  <div
+                    v-if="activePlayers.length === 0"
+                    class="text-center text-slate-500 text-sm py-4"
+                  >
+                    No active players found.
+                  </div>
+                </div>
+
+                <div class="mt-6 text-center">
+                  <button
+                    @click="closeWinnerDialog"
+                    class="text-sm font-medium text-slate-400 hover:text-white transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </DialogPanel>
+            </TransitionChild>
+          </div>
+        </div>
+      </Dialog>
+    </TransitionRoot>
   </div>
 </template>
