@@ -137,26 +137,27 @@ const take = async () => {
     <h2>pot: {{ room.pot }} 枚</h2>
     <h2>chips: {{ room.players[playerName].chips }} 枚</h2>
 
-    <div>
-      <input
-        type="number"
-        v-model.number="betAmount"
-        :min="room.currentHighestBet"
-        :max="currentPlayer?.chips"
-      />
-      <button @click="bet(betAmount)">bet</button>
-    </div>
-
-    <div>
-      <button @click="call">call</button>
-    </div>
-
-    <div>
-      <button @click="take">take</button>
-    </div>
-
     <div v-if="room.waiting">
       <button @click="declareDealer">dealer</button>
+    </div>
+    <div v-else>
+      <div>
+        <input
+          type="number"
+          v-model.number="betAmount"
+          :min="room.currentHighestBet"
+          :max="currentPlayer?.chips"
+        />
+        <button @click="bet(betAmount)">bet</button>
+      </div>
+
+      <div>
+        <button @click="call">call</button>
+      </div>
+
+      <div>
+        <button @click="take">take</button>
+      </div>
     </div>
 
     <div v-if="currentPlayer.is_dealer">
