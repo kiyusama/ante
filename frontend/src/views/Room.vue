@@ -153,7 +153,9 @@ const proceedRound = async () => {
     current_highest_bet: 0,
   }
 
-  Object.keys(room.value.players).forEach((playerNameKey, player) => {
+  Object.keys(room.value.players).forEach((playerNameKey) => {
+    const player = room.value.players[playerNameKey]
+
     //十分な金額をかけていない人を強制フォールド
     //all_inの人は除く
     if (player.state === 'active' && player.current_bet < currentHighestBet) {
