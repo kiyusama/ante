@@ -155,6 +155,7 @@ const proceedRound = async () => {
 
   Object.keys(room.value.players).forEach((playerNameKey, player) => {
     //十分な金額をかけていない人を強制フォールド
+    //all_inの人は除く
     if (player.state === 'active' && player.current_bet < currentHighestBet) {
       updates[`players/${playerNameKey}/state`] = 'fold'
     }
@@ -263,14 +264,11 @@ const undo = async () => {
 
       <div class="bg-slate-800 rounded-2xl shadow-xl p-6 border border-slate-700">
         <div v-if="room?.waiting" class="flex flex-col items-center justify-center py-4">
-          <p class="text-slate-400 mb-6 text-center text-sm">
-            Waiting for the next hand to start...
-          </p>
           <button
             @click="declareDealer"
             class="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 transition-colors text-white font-bold py-4 px-6 rounded-xl shadow-lg shadow-blue-900/20 active:scale-95"
           >
-            <StarIcon class="w-6 h-6" /> Declare Dealer & Start
+            <StarIcon class="w-6 h-6" /> Dealer
           </button>
         </div>
 
@@ -278,17 +276,25 @@ const undo = async () => {
           <div class="flex gap-3 pt-2">
             <button
               @click="call"
-              class="flex-1 flex flex-col items-center justify-center gap-1 bg-slate-700 hover:bg-slate-600 transition-colors border border-slate-600 text-white font-bold py-3 px-4 rounded-xl active:scale-95"
+              :disabled="currentPlayer?.state === 'fold'"
+              class="flex-1 flex flex-col items-center justify-center gap-1 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-slate-700 disabled:active:scale-100 transition-colors border border-slate-600 text-white font-bold py-3 px-4 rounded-xl active:scale-95"
             >
-              <CheckCircleIcon class="w-6 h-6 text-emerald-400" />
+              <CheckCircleIcon
+                class="w-6 h-6"
+                :class="currentPlayer?.state === 'fold' ? 'text-slate-400' : 'text-emerald-400'"
+              />
               <span>Call {{ callAmount > 0 ? '+' + callAmount : '' }}</span>
             </button>
 
             <button
               @click="openBetDialog"
-              class="flex-1 flex flex-col items-center justify-center gap-1 bg-indigo-600 hover:bg-indigo-500 transition-colors border border-indigo-500 text-white font-bold py-3 px-4 rounded-xl active:scale-95 shadow-lg shadow-indigo-900/20"
+              :disabled="currentPlayer?.state === 'fold'"
+              class="flex-1 flex flex-col items-center justify-center gap-1 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-indigo-600 disabled:active:scale-100 transition-colors border border-indigo-500 text-white font-bold py-3 px-4 rounded-xl active:scale-95 shadow-lg shadow-indigo-900/20 disabled:shadow-none"
             >
-              <ArrowUpCircleIcon class="w-6 h-6 text-indigo-300" />
+              <ArrowUpCircleIcon
+                class="w-6 h-6"
+                :class="currentPlayer?.state === 'fold' ? 'text-slate-400' : 'text-indigo-300'"
+              />
               <span>Bet / Raise</span>
             </button>
           </div>
@@ -339,7 +345,6 @@ const undo = async () => {
           <CircleStackIcon class="w-8 h-8 text-indigo-400" />
         </div>
         <h1 class="text-2xl font-black tracking-tight text-white">Join Table</h1>
-        <p class="text-slate-400 text-sm mt-2">Enter your name to join the poker game.</p>
       </div>
 
       <div class="space-y-4">
@@ -349,7 +354,6 @@ const undo = async () => {
             v-model="playerName"
             @keyup.enter="joinGame"
             class="w-full bg-slate-900 border border-slate-600 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all placeholder-slate-500"
-            placeholder="e.g. Daniel N."
           />
         </div>
         <button
