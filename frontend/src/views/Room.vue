@@ -27,6 +27,11 @@ const isJoined = ref(false)
 
 const betAmount = ref(0)
 
+//callに必要な額を常に計算
+const callAmount = computed(() => {
+  return room.value.current_highest_bet - currentPlayer.value.current_bet
+})
+
 //自分の情報を取得
 const currentPlayer = computed(() => {
   return room.value?.players?.[playerName.value]
@@ -122,9 +127,8 @@ const bet = async (betAmount) => {
 //call action
 const call = async () => {
   const currentHighestBet = room.value.current_highest_bet
-  const callAmount = currentHighestBet - currentPlayer.value.current_bet
 
-  if (!isAbleToPay(callAmount) || currentHighestBet == currentPlayer.value.current_bet) {
+  if (!isAbleToPay(callAmount.value) || currentHighestBet == currentPlayer.value.current_bet) {
     alert("you can't call")
     return
   }
@@ -132,9 +136,9 @@ const call = async () => {
   await saveSnap()
 
   await update(roomRef, {
-    pot: increment(callAmount),
+    pot: increment(callAmount.value),
     [`players/${playerName.value}/current_bet`]: currentHighestBet,
-    [`players/${playerName.value}/chips`]: increment(-callAmount),
+    [`players/${playerName.value}/chips`]: increment(-callAmount.value),
   })
 }
 
@@ -267,7 +271,7 @@ const take = async () => {
               class="flex-1 flex flex-col items-center justify-center gap-1 bg-slate-700 hover:bg-slate-600 transition-colors border border-slate-600 text-white font-bold py-3 px-4 rounded-xl active:scale-95"
             >
               <CheckCircleIcon class="w-6 h-6 text-emerald-400" />
-              <span>Call</span>
+              <span>Call {{ callAmount > 0 ? '+' + callAmount : '' }}</span>
             </button>
             <button
               @click="take"
