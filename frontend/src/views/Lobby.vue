@@ -26,6 +26,7 @@ const createRoom = async () => {
     current_highest_bet: 0,
     stack: 1000,
     waiting: true,
+    history: [],
   })
 
   //作成後ルームに遷移
