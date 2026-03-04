@@ -77,7 +77,7 @@ const joinGame = async () => {
         name: name,
         chips: stack,
         current_bet: 0,
-        state: 'active', //active,folded,all_in,dead
+        state: 'active', //active,fold,all_in,dead
         is_dealer: false,
       },
     })
@@ -156,7 +156,7 @@ const proceedRound = async () => {
   Object.keys(room.value.players).forEach((playerNameKey, player) => {
     //十分な金額をかけていない人を強制フォールド
     if (player.state === 'active' && player.current_bet < currentHighestBet) {
-      updates[`players/${playerNameKey}/state`] = 'folded'
+      updates[`players/${playerNameKey}/state`] = 'fold'
     }
 
     //すべてのplayerのcurrent_betを初期化
@@ -275,7 +275,7 @@ const undo = async () => {
         </div>
 
         <div v-else class="space-y-5">
-          <div class="flex gap-3 pt-2 border-t border-slate-700">
+          <div class="flex gap-3 pt-2">
             <button
               @click="call"
               class="flex-1 flex flex-col items-center justify-center gap-1 bg-slate-700 hover:bg-slate-600 transition-colors border border-slate-600 text-white font-bold py-3 px-4 rounded-xl active:scale-95"
