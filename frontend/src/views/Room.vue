@@ -4,6 +4,17 @@ import { ref, computed } from 'vue'
 import { useDatabaseObject } from 'vuefire'
 import { ref as dbRef, update, set, increment } from 'firebase/database'
 import { db } from '@/firebase/config'
+import {
+  CurrencyDollarIcon,
+  CircleStackIcon,
+  ArrowRightEndOnRectangleIcon,
+  StarIcon,
+  ArrowUpCircleIcon,
+  CheckCircleIcon,
+  TrophyIcon,
+  ForwardIcon,
+  ArrowUturnLeftIcon,
+} from '@heroicons/vue/24/solid'
 const route = useRoute()
 
 // データベースの参照先を指定
@@ -49,8 +60,8 @@ const saveSnap = async () => {
 
   let newHistory = history || []
 
-  // 履歴の最大数を制限
-  newHistory = [...newHistory.slice(-4), currentState]
+  // 履歴の最大数を制限(10個まで)
+  newHistory = [...newHistory.slice(-9), currentState]
 
   await update(roomRef, {
     history: newHistory,
@@ -58,7 +69,7 @@ const saveSnap = async () => {
 }
 
 const undo = async () => {
-  let currentHistory = room.value.history
+  let currentHistory = room.value.history || []
 
   if (currentHistory.length === 0) {
     alert('no histories')
@@ -113,7 +124,7 @@ const call = async () => {
   const currentHighestBet = room.value.current_highest_bet
   const callAmount = currentHighestBet - currentPlayer.value.current_bet
 
-  if (!isAbleToPay(callAmount)) {
+  if (!isAbleToPay(callAmount) || currentHighestBet == currentPlayer.value.current_bet) {
     alert("you can't call")
     return
   }
@@ -172,44 +183,161 @@ const take = async () => {
 </script>
 
 <template>
-  <div v-if="isJoined">
-    <div>
-      <button @click="undo">undo</button>
-    </div>
+  <div
+    class="min-h-screen bg-slate-900 text-slate-100 font-sans flex flex-col items-center py-8 px-4"
+  >
+    <div v-if="isJoined" class="w-full max-w-md flex flex-col gap-6">
+      <div class="bg-slate-800 rounded-2xl shadow-xl p-6 border border-slate-700">
+        <div class="flex items-center justify-between mb-4">
+          <span class="text-slate-400 font-medium tracking-wider text-sm uppercase"
+            >Room status</span
+          >
+          <span
+            v-if="currentPlayer?.is_dealer"
+            class="bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1"
+          >
+            <StarIcon class="w-4 h-4" /> Dealer
+          </span>
+        </div>
 
-    <h2>pot: {{ room.pot }} 枚</h2>
-    <h2>chips: {{ room.players[playerName].chips }} 枚</h2>
-
-    <div v-if="room.waiting">
-      <button @click="declareDealer">dealer</button>
-    </div>
-    <div v-else>
-      <div>
-        <input
-          type="number"
-          v-model.number="betAmount"
-          :min="room.currentHighestBet"
-          :max="currentPlayer?.chips"
-        />
-        <button @click="bet(betAmount)">bet</button>
+        <div class="space-y-3">
+          <div
+            class="flex justify-between items-center bg-slate-900/50 p-4 rounded-xl border border-slate-700/50"
+          >
+            <div class="flex items-center gap-2 text-slate-300">
+              <CurrencyDollarIcon class="w-6 h-6 text-yellow-500" />
+              <span class="font-semibold">Pot</span>
+            </div>
+            <span class="text-3xl font-black text-yellow-400">{{ room?.pot || 0 }}</span>
+          </div>
+          <div
+            class="flex justify-between items-center bg-slate-900/50 p-4 rounded-xl border border-slate-700/50"
+          >
+            <div class="flex items-center gap-2 text-slate-300">
+              <CircleStackIcon class="w-6 h-6 text-emerald-500" />
+              <span class="font-semibold">My Chips</span>
+            </div>
+            <span class="text-3xl font-black text-emerald-400">{{
+              currentPlayer?.chips || 0
+            }}</span>
+          </div>
+        </div>
       </div>
 
-      <div>
-        <button @click="call">call</button>
+      <div class="bg-slate-800 rounded-2xl shadow-xl p-6 border border-slate-700">
+        <div v-if="room?.waiting" class="flex flex-col items-center justify-center py-4">
+          <p class="text-slate-400 mb-6 text-center text-sm">
+            Waiting for the next hand to start...
+          </p>
+          <button
+            @click="declareDealer"
+            class="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 transition-colors text-white font-bold py-4 px-6 rounded-xl shadow-lg shadow-blue-900/20 active:scale-95"
+          >
+            <StarIcon class="w-6 h-6" />
+            Declare Dealer & Start
+          </button>
+        </div>
+
+        <div v-else class="space-y-5">
+          <div>
+            <label class="block text-xs font-medium text-slate-400 uppercase mb-2"
+              >Bet Amount</label
+            >
+            <div class="flex gap-2">
+              <input
+                type="number"
+                v-model.number="betAmount"
+                :min="room?.current_highest_bet || 0"
+                :max="currentPlayer?.chips"
+                class="w-full bg-slate-900 border border-slate-600 rounded-xl px-4 py-3 text-lg font-bold text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
+                placeholder="0"
+              />
+              <button
+                @click="bet(betAmount)"
+                class="flex items-center justify-center gap-1 bg-indigo-600 hover:bg-indigo-500 transition-colors text-white font-bold px-6 rounded-xl shadow-lg shadow-indigo-900/20 active:scale-95 whitespace-nowrap"
+              >
+                <ArrowUpCircleIcon class="w-5 h-5" /> Bet
+              </button>
+            </div>
+          </div>
+
+          <div class="flex gap-3 pt-2 border-t border-slate-700">
+            <button
+              @click="call"
+              class="flex-1 flex flex-col items-center justify-center gap-1 bg-slate-700 hover:bg-slate-600 transition-colors border border-slate-600 text-white font-bold py-3 px-4 rounded-xl active:scale-95"
+            >
+              <CheckCircleIcon class="w-6 h-6 text-emerald-400" />
+              <span>Call</span>
+            </button>
+            <button
+              @click="take"
+              class="flex-1 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-yellow-400 to-amber-600 hover:to-amber-500 transition-colors text-slate-900 font-black py-3 px-4 rounded-xl shadow-lg shadow-amber-900/20 active:scale-95"
+            >
+              <TrophyIcon class="w-6 h-6" />
+              <span>Take Pot</span>
+            </button>
+          </div>
+        </div>
       </div>
 
-      <div>
-        <button @click="take">take</button>
+      <div
+        v-if="currentPlayer?.is_dealer"
+        class="bg-blue-900/20 border border-blue-500/30 rounded-2xl p-6"
+      >
+        <h3
+          class="text-blue-400 font-bold text-sm uppercase tracking-wider mb-4 flex items-center gap-2"
+        >
+          <StarIcon class="w-4 h-4" /> Dealer Controls
+        </h3>
+        <div class="flex gap-3">
+          <button
+            @click="proceedRound"
+            class="flex-1 flex items-center justify-center gap-2 bg-blue-600/80 hover:bg-blue-500 transition-colors text-white font-semibold py-3 px-4 rounded-xl active:scale-95"
+          >
+            <ForwardIcon class="w-5 h-5" /> Next Round
+          </button>
+          <button
+            @click="undo"
+            class="flex items-center justify-center gap-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/50 text-red-400 transition-colors font-semibold py-3 px-6 rounded-xl active:scale-95"
+          >
+            <ArrowUturnLeftIcon class="w-5 h-5" /> Undo
+          </button>
+        </div>
       </div>
     </div>
 
-    <div v-if="currentPlayer.is_dealer">
-      <button @click="proceedRound">next round</button>
-    </div>
-  </div>
+    <div
+      v-else
+      class="w-full max-w-sm m-auto bg-slate-800 rounded-2xl shadow-2xl p-8 border border-slate-700"
+    >
+      <div class="text-center mb-8">
+        <div
+          class="bg-indigo-500/20 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 border border-indigo-500/30"
+        >
+          <CircleStackIcon class="w-8 h-8 text-indigo-400" />
+        </div>
+        <h1 class="text-2xl font-black tracking-tight text-white">Join Table</h1>
+        <p class="text-slate-400 text-sm mt-2">Enter your name to join the poker game.</p>
+      </div>
 
-  <div v-else>
-    <input v-model="playerName" />
-    <button @click="joinGame">参加</button>
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-slate-400 mb-1">Player Name</label>
+          <input
+            v-model="playerName"
+            @keyup.enter="joinGame"
+            class="w-full bg-slate-900 border border-slate-600 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all placeholder-slate-500"
+            placeholder="e.g. Daniel N."
+          />
+        </div>
+        <button
+          @click="joinGame"
+          :disabled="!playerName"
+          class="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-700 disabled:text-slate-500 transition-colors text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-indigo-900/20 active:scale-95"
+        >
+          Join Game <ArrowRightEndOnRectangleIcon class="w-5 h-5" />
+        </button>
+      </div>
+    </div>
   </div>
 </template>
