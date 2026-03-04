@@ -2,7 +2,7 @@
 import { useRoute } from 'vue-router'
 import { ref, computed } from 'vue'
 import { useDatabaseObject } from 'vuefire'
-import { ref as dbRef, update, increment } from 'firebase/database'
+import { ref as dbRef, update, set, increment } from 'firebase/database'
 import { db } from '@/firebase/config'
 const route = useRoute()
 
@@ -43,9 +43,40 @@ const joinGame = async () => {
   isJoined.value = true
 }
 
+const saveSnap = async () => {
+  // history情報とそれ以外に分けて取り出す
+  const { history, ...currentState } = room.value
+
+  let newHistory = history || []
+
+  // 履歴の最大数を制限
+  newHistory = [...newHistory.slice(-4), currentState]
+
+  await update(roomRef, {
+    history: newHistory,
+  })
+}
+
+const undo = async () => {
+  let currentHistory = room.value.history
+
+  if (currentHistory.length === 0) {
+    alert('no histories')
+    return
+  }
+  const previousState = currentHistory.pop()
+
+  await set(roomRef, {
+    ...previousState,
+    history: currentHistory,
+  })
+}
+
 //dealer positionの人が押す
 //ゲーム開始の合図
 const declareDealer = async () => {
+  await saveSnap()
+
   await update(roomRef, {
     waiting: false,
     [`players/${playerName.value}/is_dealer`]: true,
@@ -67,6 +98,8 @@ const bet = async (betAmount) => {
     return
   }
 
+  await saveSnap()
+
   await update(roomRef, {
     pot: increment(betAmount),
     current_highest_bet: newBet,
@@ -85,6 +118,8 @@ const call = async () => {
     return
   }
 
+  await saveSnap()
+
   await update(roomRef, {
     pot: increment(callAmount),
     [`players/${playerName.value}/current_bet`]: currentHighestBet,
@@ -95,6 +130,8 @@ const call = async () => {
 //ラウンドを進める
 //dealer positionのみ可能
 const proceedRound = async () => {
+  await saveSnap()
+
   const currentHighestBet = room.value.current_highest_bet
 
   const updates = {
@@ -115,6 +152,8 @@ const proceedRound = async () => {
 
 //potの獲得で1ハンド終了
 const take = async () => {
+  await saveSnap()
+
   const potValue = room.value.pot
   const updates = {
     pot: 0,
@@ -134,6 +173,10 @@ const take = async () => {
 
 <template>
   <div v-if="isJoined">
+    <div>
+      <button @click="undo">undo</button>
+    </div>
+
     <h2>pot: {{ room.pot }} 枚</h2>
     <h2>chips: {{ room.players[playerName].chips }} 枚</h2>
 
