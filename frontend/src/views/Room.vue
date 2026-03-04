@@ -16,8 +16,18 @@ import {
   ArrowUturnLeftIcon,
 } from '@heroicons/vue/24/solid'
 import { Dialog, DialogPanel, DialogTitle, TransitionRoot, TransitionChild } from '@headlessui/vue'
+const route = useRoute()
 
 //headless ui用の表示管理
+//bet用
+const isBetDialogOpen = ref(false)
+const openBetDialog = () => {
+  isBetDialogOpen.value = true
+}
+const closeBetDialog = () => {
+  isBetDialogOpen.value = false
+}
+//push pot用
 const isWinnerDialogOpen = ref(false)
 const openWinnerDialog = () => {
   isWinnerDialogOpen.value = true
@@ -25,7 +35,6 @@ const openWinnerDialog = () => {
 const closeWinnerDialog = () => {
   isWinnerDialogOpen.value = false
 }
-const route = useRoute()
 
 // データベースの参照先を指定
 // リアルタイムでデータを取得(room情報もplayer情報も含まれる)
@@ -100,6 +109,8 @@ const bet = async (betAmount) => {
     [`players/${playerName.value}/chips`]: increment(-betAmount),
     [`players/${playerName.value}/current_bet`]: increment(betAmount),
   })
+
+  closeBetDialog()
 }
 
 //call action
@@ -264,28 +275,6 @@ const undo = async () => {
         </div>
 
         <div v-else class="space-y-5">
-          <div>
-            <label class="block text-xs font-medium text-slate-400 uppercase mb-2"
-              >Bet Amount</label
-            >
-            <div class="flex gap-2">
-              <input
-                type="number"
-                v-model.number="betAmount"
-                :min="room?.current_highest_bet || 0"
-                :max="currentPlayer?.chips"
-                class="w-full bg-slate-900 border border-slate-600 rounded-xl px-4 py-3 text-lg font-bold text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
-                placeholder="0"
-              />
-              <button
-                @click="bet(betAmount)"
-                class="flex items-center justify-center gap-1 bg-indigo-600 hover:bg-indigo-500 transition-colors text-white font-bold px-6 rounded-xl shadow-lg shadow-indigo-900/20 active:scale-95 whitespace-nowrap"
-              >
-                <ArrowUpCircleIcon class="w-5 h-5" /> Bet
-              </button>
-            </div>
-          </div>
-
           <div class="flex gap-3 pt-2 border-t border-slate-700">
             <button
               @click="call"
@@ -293,6 +282,14 @@ const undo = async () => {
             >
               <CheckCircleIcon class="w-6 h-6 text-emerald-400" />
               <span>Call {{ callAmount > 0 ? '+' + callAmount : '' }}</span>
+            </button>
+
+            <button
+              @click="openBetDialog"
+              class="flex-1 flex flex-col items-center justify-center gap-1 bg-indigo-600 hover:bg-indigo-500 transition-colors border border-indigo-500 text-white font-bold py-3 px-4 rounded-xl active:scale-95 shadow-lg shadow-indigo-900/20"
+            >
+              <ArrowUpCircleIcon class="w-6 h-6 text-indigo-300" />
+              <span>Bet / Raise</span>
             </button>
           </div>
         </div>
@@ -309,16 +306,16 @@ const undo = async () => {
         </h3>
         <div class="flex gap-3">
           <button
-            @click="proceedRound"
-            class="flex-1 flex items-center justify-center gap-2 bg-blue-600/80 hover:bg-blue-500 transition-colors text-white font-semibold py-3 px-4 rounded-xl active:scale-95"
-          >
-            <ForwardIcon class="w-5 h-5" /> Next Round
-          </button>
-          <button
             @click="undo"
             class="flex items-center justify-center gap-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/50 text-red-400 transition-colors font-semibold py-3 px-6 rounded-xl active:scale-95"
           >
             <ArrowUturnLeftIcon class="w-5 h-5" /> Undo
+          </button>
+          <button
+            @click="proceedRound"
+            class="flex-1 flex items-center justify-center gap-2 bg-blue-600/80 hover:bg-blue-500 transition-colors text-white font-semibold py-3 px-4 rounded-xl active:scale-95"
+          >
+            <ForwardIcon class="w-5 h-5" /> Next Round
           </button>
           <button
             @click="openWinnerDialog"
@@ -433,6 +430,83 @@ const undo = async () => {
                     class="text-sm font-medium text-slate-400 hover:text-white transition-colors"
                   >
                     Cancel
+                  </button>
+                </div>
+              </DialogPanel>
+            </TransitionChild>
+          </div>
+        </div>
+      </Dialog>
+    </TransitionRoot>
+
+    <TransitionRoot appear :show="isBetDialogOpen" as="template">
+      <Dialog as="div" @close="closeBetDialog" class="relative z-50">
+        <TransitionChild
+          as="template"
+          enter="duration-300 ease-out"
+          enter-from="opacity-0"
+          enter-to="opacity-100"
+          leave="duration-200 ease-in"
+          leave-from="opacity-100"
+          leave-to="opacity-0"
+        >
+          <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" />
+        </TransitionChild>
+
+        <div class="fixed inset-0 overflow-y-auto">
+          <div class="flex min-h-full items-center justify-center p-4 text-center">
+            <TransitionChild
+              as="template"
+              enter="duration-300 ease-out"
+              enter-from="opacity-0 scale-95"
+              enter-to="opacity-100 scale-100"
+              leave="duration-200 ease-in"
+              leave-from="opacity-100 scale-100"
+              leave-to="opacity-0 scale-95"
+            >
+              <DialogPanel
+                class="w-full max-w-sm transform overflow-hidden rounded-2xl bg-slate-800 p-6 text-left align-middle shadow-2xl transition-all border border-slate-700"
+              >
+                <DialogTitle
+                  as="h3"
+                  class="text-xl font-black leading-6 text-white mb-4 flex items-center gap-2"
+                >
+                  <ArrowUpCircleIcon class="w-6 h-6 text-indigo-500" /> Bet Amount
+                </DialogTitle>
+
+                <div class="space-y-4">
+                  <div>
+                    <label class="block text-xs font-medium text-slate-400 uppercase mb-2">
+                      Amount to Bet
+                    </label>
+                    <input
+                      type="number"
+                      v-model.number="betAmount"
+                      :min="room?.current_highest_bet"
+                      :max="currentPlayer?.chips"
+                      @keyup.enter="bet(betAmount)"
+                      class="w-full bg-slate-900 border border-slate-600 rounded-xl px-4 py-3 text-2xl font-black text-white text-center focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
+                      :placeholder="room?.current_highest_bet"
+                    />
+                  </div>
+
+                  <p class="text-xs text-center text-slate-400">
+                    Max: <span class="text-emerald-400">{{ currentPlayer?.chips }}</span> chips
+                  </p>
+                </div>
+
+                <div class="mt-6 flex gap-3">
+                  <button
+                    @click="closeBetDialog"
+                    class="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 px-4 rounded-xl transition-colors active:scale-95"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    @click="bet(betAmount)"
+                    class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-indigo-900/20 transition-colors active:scale-95"
+                  >
+                    Confirm Bet
                   </button>
                 </div>
               </DialogPanel>
