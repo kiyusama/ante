@@ -49,8 +49,8 @@ const saveSnap = async () => {
 
   let newHistory = history || []
 
-  // 履歴の最大数を制限
-  newHistory = [...newHistory.slice(-4), currentState]
+  // 履歴の最大数を制限(10個まで)
+  newHistory = [...newHistory.slice(-9), currentState]
 
   await update(roomRef, {
     history: newHistory,
@@ -58,7 +58,7 @@ const saveSnap = async () => {
 }
 
 const undo = async () => {
-  let currentHistory = room.value.history
+  let currentHistory = room.value.history || []
 
   if (currentHistory.length === 0) {
     alert('no histories')
