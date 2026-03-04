@@ -34,7 +34,7 @@ const joinGame = async () => {
         name: name,
         chips: stack,
         current_bet: 0,
-        state: 'active',
+        state: 'active', //active,folded,all_in,dead
         is_dealer: false,
       },
     })
@@ -92,21 +92,22 @@ const call = async () => {
   })
 }
 
-//fold action
-const fold = async () => {
-  await update(roomRef, {
-    [`players/${playerName.value}/state`]: 'folded',
-  })
-}
-
 //ラウンドを進める
 //dealer positionのみ可能
 const proceedRound = async () => {
+  const currentHighestBet = room.value.current_highest_bet
+
   const updates = {
     current_highest_bet: 0,
   }
-  //すべてのplayerのcurrent_betを初期化
-  Object.keys(room.value.players).forEach((playerNameKey) => {
+
+  Object.keys(room.value.players).forEach((playerNameKey, player) => {
+    //十分な金額をかけていない人を強制フォールド
+    if (player.state === 'active' && player.current_bet < currentHighestBet) {
+      updates[`players/${playerNameKey}/state`] = 'folded'
+    }
+
+    //すべてのplayerのcurrent_betを初期化
     updates[`players/${playerNameKey}/current_bet`] = 0
   })
   await update(roomRef, updates)
@@ -148,9 +149,6 @@ const take = async () => {
 
     <div>
       <button @click="call">call</button>
-    </div>
-    <div>
-      <button @click="fold">fold</button>
     </div>
 
     <div>
