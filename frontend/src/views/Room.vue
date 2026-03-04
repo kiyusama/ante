@@ -183,8 +183,15 @@ const pushPot = async (winnerName) => {
   //すべてのplayerのcurrent_betを初期化
   Object.keys(room.value.players).forEach((playerNameKey) => {
     updates[`players/${playerNameKey}/current_bet`] = 0
-    updates[`players/${playerNameKey}/state`] = 'active'
     updates[`players/${playerNameKey}/is_dealer`] = false
+
+    const player = room.value.players[playerNameKey]
+
+    if (player.chips == 0 && player.name != winnerName) {
+      updates[`players/${playerNameKey}/state`] = 'dead'
+    } else {
+      updates[`players/${playerNameKey}/state`] = 'active'
+    }
   })
   await update(roomRef, updates)
 }
@@ -278,24 +285,24 @@ const undo = async () => {
           <div class="flex gap-3 pt-2">
             <button
               @click="call"
-              :disabled="currentPlayer?.state === 'fold'"
+              :disabled="currentPlayer?.state !== 'active'"
               class="flex-1 flex flex-col items-center justify-center gap-1 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-slate-700 disabled:active:scale-100 transition-colors border border-slate-600 text-white font-bold py-3 px-4 rounded-xl active:scale-95"
             >
               <CheckCircleIcon
                 class="w-6 h-6"
-                :class="currentPlayer?.state === 'fold' ? 'text-slate-400' : 'text-emerald-400'"
+                :class="currentPlayer?.state !== 'active' ? 'text-slate-400' : 'text-emerald-400'"
               />
               <span>Call {{ callAmount > 0 ? '+' + callAmount : '' }}</span>
             </button>
 
             <button
               @click="openBetDialog"
-              :disabled="currentPlayer?.state === 'fold'"
+              :disabled="currentPlayer?.state !== 'active'"
               class="flex-1 flex flex-col items-center justify-center gap-1 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-indigo-600 disabled:active:scale-100 transition-colors border border-indigo-500 text-white font-bold py-3 px-4 rounded-xl active:scale-95 shadow-lg shadow-indigo-900/20 disabled:shadow-none"
             >
               <ArrowUpCircleIcon
                 class="w-6 h-6"
-                :class="currentPlayer?.state === 'fold' ? 'text-slate-400' : 'text-indigo-300'"
+                :class="currentPlayer?.state !== 'active' ? 'text-slate-400' : 'text-indigo-300'"
               />
               <span>Bet / Raise</span>
             </button>
