@@ -14,6 +14,7 @@ import {
   TrophyIcon,
   ForwardIcon,
   ArrowUturnLeftIcon,
+  UsersIcon,
 } from '@heroicons/vue/24/solid'
 import { Dialog, DialogPanel, DialogTitle, TransitionRoot, TransitionChild } from '@headlessui/vue'
 const route = useRoute()
@@ -36,6 +37,14 @@ const openWinnerDialog = () => {
 }
 const closeWinnerDialog = () => {
   isWinnerDialogOpen.value = false
+}
+//player一覧用
+const isPlayersDialogOpen = ref(false)
+const openPlayersDialog = () => {
+  isPlayersDialogOpen.value = true
+}
+const closePlayersDialog = () => {
+  isPlayersDialogOpen.value = false
 }
 
 // データベースの参照先を指定
@@ -95,11 +104,19 @@ const isAbleToPay = (bill) => {
 
 // bet/raise action
 const bet = async () => {
+  //最大ベットならall in
+  if (betAmount.value == currentPlayer.value.chips) {
+    await allIn()
+    closeBetDialog()
+    return
+  }
+
   const currentHighestBet = room.value.current_highest_bet
   const newBet = betAmount.value + currentPlayer.value.current_bet
 
   if (newBet <= currentHighestBet || !isAbleToPay(betAmount.value)) {
     alert("you can't bet")
+    closeBetDialog()
     return
   }
 
@@ -119,7 +136,12 @@ const bet = async () => {
 const call = async () => {
   const currentHighestBet = room.value.current_highest_bet
 
-  if (!isAbleToPay(callAmount.value) || currentHighestBet == currentPlayer.value.current_bet) {
+  if (!isAbleToPay(callAmount.value)) {
+    await allIn()
+    return
+  }
+
+  if (currentHighestBet == currentPlayer.value.current_bet) {
     alert("you can't call")
     return
   }
@@ -356,6 +378,16 @@ const undo = async () => {
             }}</span>
           </div>
         </div>
+
+        <div class="mt-4 pt-4 border-t border-slate-700/50">
+          <button
+            @click="openPlayersDialog"
+            class="w-full flex items-center justify-center gap-2 bg-slate-700 hover:bg-slate-600 transition-colors border border-slate-600 text-white font-bold py-3 px-4 rounded-xl active:scale-95"
+          >
+            <UsersIcon class="w-5 h-5 text-slate-300" />
+            <span>Players List</span>
+          </button>
+        </div>
       </div>
 
       <div class="bg-slate-800 rounded-2xl shadow-xl p-6 border border-slate-700">
@@ -393,14 +425,6 @@ const undo = async () => {
               />
               <span>Bet / Raise</span>
             </button>
-            <button
-              @click="allIn"
-              :disabled="currentPlayer?.state !== 'active' || currentPlayer?.chips <= 0"
-              class="flex-1 flex flex-col items-center justify-center gap-1 bg-red-600 hover:bg-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors border border-red-500 text-white font-bold py-3 px-4 rounded-xl active:scale-95 shadow-lg"
-            >
-              <span class="text-sm">All In</span>
-              <span class="text-xs">({{ currentPlayer?.chips }})</span>
-            </button>
           </div>
         </div>
       </div>
@@ -425,14 +449,14 @@ const undo = async () => {
             @click="proceedRound"
             class="flex-1 flex items-center justify-center gap-2 bg-blue-600/80 hover:bg-blue-500 transition-colors text-white font-semibold py-3 px-4 rounded-xl active:scale-95"
           >
-            <ForwardIcon class="w-5 h-5" /> Next Round
+            <ForwardIcon class="w-5 h-5" /> Continue
           </button>
           <button
             @click="openWinnerDialog"
             class="flex-1 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-yellow-400 to-amber-600 hover:to-amber-500 transition-colors text-slate-900 font-black py-3 px-4 rounded-xl shadow-lg shadow-amber-900/20 active:scale-95"
           >
             <TrophyIcon class="w-6 h-6" />
-            <span>Push Pot</span>
+            <span>Give Pot</span>
           </button>
         </div>
       </div>
@@ -637,6 +661,103 @@ const undo = async () => {
                     class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-indigo-900/20 transition-colors active:scale-95"
                   >
                     Confirm Bet
+                  </button>
+                </div>
+              </DialogPanel>
+            </TransitionChild>
+          </div>
+        </div>
+      </Dialog>
+    </TransitionRoot>
+    <TransitionRoot appear :show="isPlayersDialogOpen" as="template">
+      <Dialog as="div" @close="closePlayersDialog" class="relative z-50">
+        <TransitionChild
+          as="template"
+          enter="duration-300 ease-out"
+          enter-from="opacity-0"
+          enter-to="opacity-100"
+          leave="duration-200 ease-in"
+          leave-from="opacity-100"
+          leave-to="opacity-0"
+        >
+          <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" />
+        </TransitionChild>
+
+        <div class="fixed inset-0 overflow-y-auto">
+          <div class="flex min-h-full items-center justify-center p-4 text-center">
+            <TransitionChild
+              as="template"
+              enter="duration-300 ease-out"
+              enter-from="opacity-0 scale-95"
+              enter-to="opacity-100 scale-100"
+              leave="duration-200 ease-in"
+              leave-from="opacity-100 scale-100"
+              leave-to="opacity-0 scale-95"
+            >
+              <DialogPanel
+                class="w-full max-w-sm transform overflow-hidden rounded-2xl bg-slate-800 p-6 text-left align-middle shadow-2xl transition-all border border-slate-700"
+              >
+                <DialogTitle
+                  as="h3"
+                  class="text-xl font-black leading-6 text-white mb-4 flex items-center justify-between"
+                >
+                  <div class="flex items-center gap-2">
+                    <UsersIcon class="w-6 h-6 text-indigo-400" /> Players List
+                  </div>
+                  <span
+                    class="text-sm font-medium text-slate-400 bg-slate-900 px-3 py-1 rounded-full border border-slate-700"
+                  >
+                    Total: {{ room?.player_count || 0 }}
+                  </span>
+                </DialogTitle>
+
+                <div class="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
+                  <div
+                    v-for="(player, pName) in room.players"
+                    :key="pName"
+                    class="bg-slate-900/50 p-4 rounded-xl border border-slate-700/50 flex items-center justify-between"
+                  >
+                    <div class="flex flex-col gap-1">
+                      <div class="flex items-center gap-2">
+                        <span class="font-bold text-slate-200">{{ pName }}</span>
+                        <StarIcon v-if="player.is_dealer" class="w-4 h-4 text-blue-400" />
+                      </div>
+                      <div>
+                        <span
+                          class="text-xs font-bold px-2 py-0.5 rounded-full uppercase"
+                          :class="{
+                            'bg-emerald-500/20 text-emerald-400': player.state === 'active',
+                            'bg-red-500/20 text-red-400': player.state === 'all_in',
+                            'bg-slate-700 text-slate-400': player.state === 'fold',
+                            'bg-slate-900 text-slate-600': player.state === 'dead',
+                          }"
+                        >
+                          {{ player.state }}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div class="text-right">
+                      <div class="flex items-center justify-end gap-1 text-emerald-400 font-black">
+                        <CircleStackIcon class="w-4 h-4" />
+                        {{ player.chips }}
+                      </div>
+                      <div
+                        v-if="player.current_bet > 0"
+                        class="text-xs text-yellow-500 font-medium mt-1"
+                      >
+                        Bet: {{ player.current_bet }}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="mt-6 flex gap-3">
+                  <button
+                    @click="closePlayersDialog"
+                    class="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 px-4 rounded-xl transition-colors active:scale-95"
+                  >
+                    Close
                   </button>
                 </div>
               </DialogPanel>
