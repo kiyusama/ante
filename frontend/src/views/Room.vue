@@ -95,11 +95,19 @@ const isAbleToPay = (bill) => {
 
 // bet/raise action
 const bet = async () => {
+  //最大ベットならall in
+  if (betAmount.value == currentPlayer.value.chips) {
+    await allIn()
+    closeBetDialog()
+    return
+  }
+
   const currentHighestBet = room.value.current_highest_bet
   const newBet = betAmount.value + currentPlayer.value.current_bet
 
   if (newBet <= currentHighestBet || !isAbleToPay(betAmount.value)) {
     alert("you can't bet")
+    closeBetDialog()
     return
   }
 
@@ -119,7 +127,12 @@ const bet = async () => {
 const call = async () => {
   const currentHighestBet = room.value.current_highest_bet
 
-  if (!isAbleToPay(callAmount.value) || currentHighestBet == currentPlayer.value.current_bet) {
+  if (!isAbleToPay(callAmount.value)) {
+    await allIn()
+    return
+  }
+
+  if (currentHighestBet == currentPlayer.value.current_bet) {
     alert("you can't call")
     return
   }
@@ -392,14 +405,6 @@ const undo = async () => {
                 :class="currentPlayer?.state !== 'active' ? 'text-slate-400' : 'text-indigo-300'"
               />
               <span>Bet / Raise</span>
-            </button>
-            <button
-              @click="allIn"
-              :disabled="currentPlayer?.state !== 'active' || currentPlayer?.chips <= 0"
-              class="flex-1 flex flex-col items-center justify-center gap-1 bg-red-600 hover:bg-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors border border-red-500 text-white font-bold py-3 px-4 rounded-xl active:scale-95 shadow-lg"
-            >
-              <span class="text-sm">All In</span>
-              <span class="text-xs">({{ currentPlayer?.chips }})</span>
             </button>
           </div>
         </div>
