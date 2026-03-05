@@ -27,9 +27,11 @@ const openBetDialog = () => {
 const closeBetDialog = () => {
   isBetDialogOpen.value = false
 }
-//push pot用
+//push pots用
 const isWinnerDialogOpen = ref(false)
+const winners = ref({})
 const openWinnerDialog = () => {
+  winners.value = {} //毎回初期化
   isWinnerDialogOpen.value = true
 }
 const closeWinnerDialog = () => {
@@ -92,11 +94,11 @@ const isAbleToPay = (bill) => {
 }
 
 // bet/raise action
-const bet = async (betAmount) => {
+const bet = async () => {
   const currentHighestBet = room.value.current_highest_bet
-  const newBet = betAmount + currentPlayer.value.current_bet
+  const newBet = betAmount.value + currentPlayer.value.current_bet
 
-  if (newBet <= currentHighestBet || !isAbleToPay(betAmount)) {
+  if (newBet <= currentHighestBet || !isAbleToPay(betAmount.value)) {
     alert("you can't bet")
     return
   }
@@ -104,10 +106,10 @@ const bet = async (betAmount) => {
   await saveSnap()
 
   await update(roomRef, {
-    pot: increment(betAmount),
+    pot: increment(betAmount.value),
     current_highest_bet: newBet,
-    [`players/${playerName.value}/chips`]: increment(-betAmount),
-    [`players/${playerName.value}/current_bet`]: increment(betAmount),
+    [`players/${playerName.value}/chips`]: increment(-betAmount.value),
+    [`players/${playerName.value}/current_bet`]: increment(betAmount.value),
   })
 
   closeBetDialog()
@@ -179,6 +181,10 @@ const proceedRound = async () => {
     current_highest_bet: 0,
   }
 
+  const players = room.value.players
+  //サイドポットの計算
+  updates.pots = calcSidePot(players, room.value.pots)
+
   Object.keys(room.value.players).forEach((playerNameKey) => {
     const player = room.value.players[playerNameKey]
 
@@ -194,32 +200,87 @@ const proceedRound = async () => {
   await update(roomRef, updates)
 }
 
-//potを勝者に渡す
+//サイドポットの計算
+const calcSidePot = (players, currentPots) => {
+  //計算に使うpotのリスト
+  const nextPots = currentPots
+    ? JSON.parse(JSON.stringify(currentPots))
+    : [{ amount: 0, participants: [] }]
+
+  const playerList = Object.entries(players).map(([name, p]) => ({ name, ...p }))
+
+  // 小さいポット額順にソート
+  const betLevels = [
+    ...new Set(playerList.map((p) => p.current_bet).filter((bet) => bet > 0)),
+  ].sort((a, b) => a - b)
+
+  let processedBetAmount = 0
+
+  for (const betLevel of betLevels) {
+    const amountToCollect = betLevel - processedBetAmount
+
+    // このポットの参加者
+    const payingPlayers = playerList.filter((p) => p.current_bet >= betLevel)
+    const activePot = nextPots[nextPots.length - 1]
+
+    // ポット額と参加者を更新
+    activePot.amount += amountToCollect * payingPlayers.length
+    activePot.participants = payingPlayers.filter((p) => p.state !== 'fold').map((p) => p.name)
+
+    // オールイン発生時に新しいポットを追加
+    if (payingPlayers.some((p) => p.current_bet === betLevel && p.state === 'all_in')) {
+      nextPots.push({ amount: 0, participants: [] })
+    }
+
+    processedBetAmount = betLevel
+  }
+
+  return nextPots.filter((pot) => pot.amount > 0)
+}
+
+//potsを勝者に渡す
 //dealer専用
-const pushPot = async (winnerName) => {
+const pushPots = async () => {
+  const pots = room.value.pots
+
   await saveSnap()
 
-  const potValue = room.value.pot
   const updates = {
     pot: 0,
+    pots: [],
     current_highest_bet: 0,
     waiting: true,
-    [`players/${winnerName}/chips`]: increment(potValue),
   }
-  //すべてのplayerのcurrent_betを初期化
+
+  // 各プレイヤーの賞金
+  const playerRewards = {}
+  pots.forEach((pot, index) => {
+    const winnerName = winners.value[index]
+    if (winnerName) {
+      playerRewards[winnerName] = (playerRewards[winnerName] || 0) + pot.amount
+    }
+  })
+
   Object.keys(room.value.players).forEach((playerNameKey) => {
+    const player = room.value.players[playerNameKey]
+
+    const reward = playerRewards[playerNameKey] || 0
+    const newChips = player.chips + reward
+
+    updates[`players/${playerNameKey}/chips`] = newChips
     updates[`players/${playerNameKey}/current_bet`] = 0
     updates[`players/${playerNameKey}/is_dealer`] = false
 
-    const player = room.value.players[playerNameKey]
-
-    if (player.chips == 0 && player.name != winnerName) {
+    // chipsが0になったらdead
+    if (newChips <= 0) {
       updates[`players/${playerNameKey}/state`] = 'dead'
     } else {
       updates[`players/${playerNameKey}/state`] = 'active'
     }
   })
+
   await update(roomRef, updates)
+  closeWinnerDialog()
 }
 
 //状態のスナップショットを撮る
@@ -332,6 +393,14 @@ const undo = async () => {
               />
               <span>Bet / Raise</span>
             </button>
+            <button
+              @click="allIn"
+              :disabled="currentPlayer?.state !== 'active' || currentPlayer?.chips <= 0"
+              class="flex-1 flex flex-col items-center justify-center gap-1 bg-red-600 hover:bg-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors border border-red-500 text-white font-bold py-3 px-4 rounded-xl active:scale-95 shadow-lg"
+            >
+              <span class="text-sm">All In</span>
+              <span class="text-xs">({{ currentPlayer?.chips }})</span>
+            </button>
           </div>
         </div>
       </div>
@@ -433,42 +502,64 @@ const undo = async () => {
                   as="h3"
                   class="text-xl font-black leading-6 text-white mb-4 flex items-center gap-2"
                 >
-                  <TrophyIcon class="w-6 h-6 text-yellow-500" /> Select Winner
+                  <TrophyIcon class="w-6 h-6 text-yellow-500" /> Select Winners
                 </DialogTitle>
 
-                <p class="text-sm text-slate-400 mb-4">
-                  Pot: <span class="font-bold text-yellow-500">{{ room?.pot }} chips</span>
-                </p>
+                <div
+                  v-if="!room?.pots || room.pots.length === 0"
+                  class="text-slate-400 text-sm mb-4"
+                >
+                  No pots available. Please ensure the round is completed.
+                </div>
 
-                <div class="space-y-3">
-                  <button
-                    v-for="player in activePlayers"
-                    :key="player.name"
-                    @click="pushPot(player.name)"
-                    class="w-full flex items-center justify-between p-4 rounded-xl bg-slate-700/50 hover:bg-slate-600 transition-colors border border-slate-600 active:scale-95"
-                  >
-                    <span class="text-white font-bold">{{ player.name }}</span>
-                    <span
-                      class="text-xs font-semibold px-2 py-1 rounded-full bg-slate-800 text-slate-300"
-                    >
-                      {{ player.state }}
-                    </span>
-                  </button>
-
+                <div v-else class="space-y-5 max-h-[60vh] overflow-y-auto pr-2">
                   <div
-                    v-if="activePlayers.length === 0"
-                    class="text-center text-slate-500 text-sm py-4"
+                    v-for="(pot, index) in room.pots"
+                    :key="index"
+                    class="bg-slate-900/50 p-4 rounded-xl border border-slate-700/50"
                   >
-                    No active players found.
+                    <div class="flex justify-between items-end mb-3">
+                      <span class="text-sm font-bold text-slate-300">
+                        {{ index === 0 ? 'Main Pot' : `Side Pot ${index}` }}
+                      </span>
+                      <span class="text-lg font-black text-yellow-400">{{ pot.amount }} chips</span>
+                    </div>
+
+                    <div class="space-y-2">
+                      <button
+                        v-for="playerName in pot.participants"
+                        :key="playerName"
+                        @click="winners[index] = playerName"
+                        class="w-full flex items-center justify-between p-3 rounded-lg border transition-all active:scale-[0.98]"
+                        :class="
+                          winners[index] === playerName
+                            ? 'bg-amber-500/20 border-amber-500 text-white shadow-[0_0_15px_rgba(245,158,11,0.2)]'
+                            : 'bg-slate-800 border-slate-600 text-slate-400 hover:bg-slate-700 hover:text-slate-200'
+                        "
+                      >
+                        <span class="font-bold">{{ playerName }}</span>
+                        <CheckCircleIcon
+                          v-if="winners[index] === playerName"
+                          class="w-5 h-5 text-amber-500"
+                        />
+                      </button>
+                    </div>
                   </div>
                 </div>
 
-                <div class="mt-6 text-center">
+                <div class="mt-6 flex gap-3">
                   <button
                     @click="closeWinnerDialog"
-                    class="text-sm font-medium text-slate-400 hover:text-white transition-colors"
+                    class="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 px-4 rounded-xl transition-colors active:scale-95"
                   >
                     Cancel
+                  </button>
+                  <button
+                    @click="pushPots"
+                    :disabled="!room?.pots || Object.keys(winners).length !== room.pots.length"
+                    class="flex-1 bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-400 hover:to-amber-500 disabled:from-slate-700 disabled:to-slate-700 disabled:text-slate-500 disabled:cursor-not-allowed text-slate-900 font-black py-3 px-4 rounded-xl shadow-lg transition-all active:scale-95"
+                  >
+                    Confirm Push
                   </button>
                 </div>
               </DialogPanel>
@@ -523,7 +614,7 @@ const undo = async () => {
                       v-model.number="betAmount"
                       :min="room?.current_highest_bet"
                       :max="currentPlayer?.chips"
-                      @keyup.enter="bet(betAmount)"
+                      @keyup.enter="bet"
                       class="w-full bg-slate-900 border border-slate-600 rounded-xl px-4 py-3 text-2xl font-black text-white text-center focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
                       :placeholder="room?.current_highest_bet"
                     />
@@ -542,7 +633,7 @@ const undo = async () => {
                     Cancel
                   </button>
                   <button
-                    @click="bet(betAmount)"
+                    @click="bet"
                     class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-indigo-900/20 transition-colors active:scale-95"
                   >
                     Confirm Bet
