@@ -131,6 +131,32 @@ const call = async () => {
   })
 }
 
+const allIn = async () => {
+  const allInAmount = currentPlayer.value.chips
+  if (allInAmount < 0) {
+    alert("you can't all_in")
+    return
+  }
+  await saveSnap()
+
+  const newBetTotal = currentPlayer.value.current_bet + allInAmount
+  const currentHighestBet = room.value.current_highest_bet
+
+  const updates = {
+    pot: increment(allInAmount),
+    [`players/${playerName.value}/chips`]: 0,
+    [`players/${playerName.value}/current_bet`]: newBetTotal,
+    [`players/${playerName.value}/state`]: 'all_in',
+  }
+
+  // オールイン額が最高ベット額を上回っていたら更新
+  if (newBetTotal > currentHighestBet) {
+    updates.current_highest_bet = newBetTotal
+  }
+
+  await update(roomRef, updates)
+}
+
 //dealer positionの人が押す
 //ゲーム開始の合図
 const declareDealer = async () => {
