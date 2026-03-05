@@ -25,7 +25,7 @@ const createRoom = async () => {
     player_count: 0,
     current_highest_bet: 0,
     stack: 1000,
-    waiting: true,
+    round: 'waiting', //waiting, pre_flop, flop, turn, river, show_down
     history: [],
   })
 

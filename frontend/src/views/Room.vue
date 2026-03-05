@@ -54,8 +54,8 @@ const room = useDatabaseObject(roomRef)
 
 const playerName = ref('')
 const isJoined = ref(false)
-
 const betAmount = ref(0)
+const rounds = ref(['waiting', 'pre_flop', 'flop', 'turn', 'river', 'show_down'])
 
 //callに必要な額を常に計算
 const callAmount = computed(() => {
@@ -65,14 +65,6 @@ const callAmount = computed(() => {
 //自分の情報を取得
 const currentPlayer = computed(() => {
   return room.value?.players?.[playerName.value]
-})
-
-//activeなユーザ一覧を取得
-const activePlayers = computed(() => {
-  if (!room.value?.players) return []
-  return Object.values(room.value.players).filter(
-    (p) => p.state === 'active' || p.state === 'all_in',
-  )
 })
 
 // ゲームへの参加
@@ -187,7 +179,7 @@ const declareDealer = async () => {
   await saveSnap()
 
   await update(roomRef, {
-    waiting: false,
+    round: 'pre_flop',
     [`players/${playerName.value}/is_dealer`]: true,
   })
 }
@@ -201,6 +193,7 @@ const proceedRound = async () => {
 
   const updates = {
     current_highest_bet: 0,
+    round: nextRound(),
   }
 
   const players = room.value.players
@@ -271,7 +264,7 @@ const pushPots = async () => {
     pot: 0,
     pots: [],
     current_highest_bet: 0,
-    waiting: true,
+    round: 'waiting',
   }
 
   // 各プレイヤーの賞金
@@ -336,6 +329,19 @@ const undo = async () => {
     history: currentHistory,
   })
 }
+
+const nextRound = () => {
+  const currentRound = room.value.round
+  let round
+
+  for (let i = 0; i < rounds.value.length; i++) {
+    if (rounds.value[i] == currentRound) {
+      round = rounds.value[(i + 1) % rounds.value.length]
+    }
+  }
+
+  return round
+}
 </script>
 
 <template>
@@ -348,6 +354,12 @@ const undo = async () => {
           <span class="text-slate-400 font-medium tracking-wider text-sm uppercase"
             >Room status</span
           >
+          <span
+            v-if="room.round !== 'waiting'"
+            class="bg-indigo-500/20 text-indigo-300 px-3 py-1 rounded-full text-xs font-bold uppercase border border-indigo-500/30 ml-3"
+          >
+            {{ room.round }}
+          </span>
           <span
             v-if="currentPlayer?.is_dealer"
             class="bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1"
@@ -391,7 +403,10 @@ const undo = async () => {
       </div>
 
       <div class="bg-slate-800 rounded-2xl shadow-xl p-6 border border-slate-700">
-        <div v-if="room?.waiting" class="flex flex-col items-center justify-center py-4">
+        <div
+          v-if="room?.round === 'waiting'"
+          class="flex flex-col items-center justify-center py-4"
+        >
           <button
             @click="declareDealer"
             class="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 transition-colors text-white font-bold py-4 px-6 rounded-xl shadow-lg shadow-blue-900/20 active:scale-95"
