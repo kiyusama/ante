@@ -444,19 +444,20 @@ const nextRound = () => {
 
       <div v-if="currentPlayer?.is_dealer" class="w-full flex flex-col gap-3 mt-4">
         <button
-          @click="proceedRound"
-          :disabled="room?.round === 'show_down'"
-          class="w-full bg-[#2A2A2A] text-[#F6F1D4] rounded-[3rem] py-6 flex items-center justify-center active:scale-95 transition-transform disabled:opacity-50"
+          @click="room?.round === 'show_down' ? openWinnerDialog() : proceedRound()"
+          class="w-full rounded-[3rem] py-4 flex items-center justify-center gap-2 active:scale-95 transition-transform"
+          :class="
+            room?.round === 'show_down'
+              ? 'bg-[#B08B42] text-[#F6F1D4]'
+              : 'bg-[#2A2A2A] text-[#F6F1D4]'
+          "
         >
-          <span class="text-3xl font-normal tracking-wider">Next Round</span>
-        </button>
-
-        <button
-          v-if="room?.round === 'show_down'"
-          @click="openWinnerDialog"
-          class="w-full bg-[#B08B42] text-[#F6F1D4] rounded-[3rem] py-4 flex items-center justify-center active:scale-95 transition-transform"
-        >
-          <span class="text-2xl font-normal tracking-wider">Give Pot</span>
+          <template v-if="room?.round === 'show_down'">
+            <span class="text-2xl font-normal tracking-wider">Give Pot</span>
+          </template>
+          <template v-else>
+            <span class="text-2xl font-normal tracking-wider">Next Round</span>
+          </template>
         </button>
       </div>
     </div>
