@@ -197,6 +197,8 @@ const proceedRound = async () => {
   }
 
   const players = room.value.players
+  let activePlayerCount = room.value.player_count
+
   //サイドポットの計算
   updates.pots = calcSidePot(players, room.value.pots)
 
@@ -207,11 +209,23 @@ const proceedRound = async () => {
     //all_inの人は除く
     if (player.state === 'active' && player.current_bet < currentHighestBet) {
       updates[`players/${playerNameKey}/state`] = 'fold'
+
+      activePlayerCount--
     }
 
+    //active以外はactiveCountから減らす
+    if (player.state !== 'active') {
+      activePlayerCount--
+    }
     //すべてのplayerのcurrent_betを初期化
     updates[`players/${playerNameKey}/current_bet`] = 0
   })
+
+  //1人しかactiveが残ってないならshowdownへ
+  if (activePlayerCount <= 1) {
+    updates.round = 'show_down'
+  }
+
   await update(roomRef, updates)
 }
 
@@ -453,22 +467,26 @@ const nextRound = () => {
         >
           <StarIcon class="w-4 h-4" /> Dealer Controls
         </h3>
-        <div class="flex gap-3">
+        <div class="flex flex-col sm:flex-row gap-3">
           <button
             @click="undo"
-            class="flex items-center justify-center gap-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/50 text-red-400 transition-colors font-semibold py-3 px-6 rounded-xl active:scale-95"
+            class="w-full sm:w-auto flex items-center justify-center gap-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/50 text-red-400 transition-colors font-semibold py-3 px-6 rounded-xl active:scale-95 disabled:opacity-50"
           >
             <ArrowUturnLeftIcon class="w-5 h-5" /> Undo
           </button>
+
           <button
             @click="proceedRound"
-            class="flex-1 flex items-center justify-center gap-2 bg-blue-600/80 hover:bg-blue-500 transition-colors text-white font-semibold py-3 px-4 rounded-xl active:scale-95"
+            :disabled="room?.round === 'show_down'"
+            class="w-full sm:flex-1 flex items-center justify-center gap-2 bg-blue-600/80 hover:bg-blue-500 transition-colors text-white font-semibold py-3 px-4 rounded-xl active:scale-95 disabled:opacity-50"
           >
             <ForwardIcon class="w-5 h-5" /> Continue
           </button>
+
           <button
             @click="openWinnerDialog"
-            class="flex-1 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-yellow-400 to-amber-600 hover:to-amber-500 transition-colors text-slate-900 font-black py-3 px-4 rounded-xl shadow-lg shadow-amber-900/20 active:scale-95"
+            :disabled="room?.round !== 'show_down'"
+            class="w-full sm:flex-1 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-yellow-400 to-amber-600 hover:to-amber-500 transition-colors text-slate-900 font-black py-3 px-4 rounded-xl shadow-lg shadow-amber-900/20 active:scale-95 disabled:opacity-50"
           >
             <TrophyIcon class="w-6 h-6" />
             <span>Give Pot</span>
