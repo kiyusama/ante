@@ -364,22 +364,26 @@ const nextRound = () => {
   >
     <div v-if="isJoined" class="w-full max-w-sm flex flex-col gap-6 mt-4">
       <div class="w-full flex justify-between items-center mb-6">
-        <button
-          @click="undo"
-          :disabled="!currentPlayer?.is_dealer"
-          class="w-16 h-16 bg-[#F6F1D4] text-[#2A2A2A] rounded-full flex items-center justify-center shadow-[4px_4px_0_#2A2A2A] active:translate-y-1 active:translate-x-1 active:shadow-none transition-all disabled:opacity-50"
-        >
-          <ArrowUturnLeftIcon class="w-8 h-8 stroke-2" />
-        </button>
+        <div class="w-16 h-16">
+          <button
+            v-if="currentPlayer?.is_dealer"
+            @click="undo"
+            class="w-full h-full bg-[#F6F1D4] text-[#2A2A2A] rounded-full flex items-center justify-center shadow-[4px_4px_0_#2A2A2A] active:translate-y-1 active:translate-x-1 active:shadow-none transition-all"
+          >
+            <ArrowUturnLeftIcon class="w-8 h-8 stroke-2" />
+          </button>
+        </div>
 
         <h1 class="text-5xl font-normal tracking-widest text-[#F6F1D4]">ANTE</h1>
 
-        <button
-          @click="openPlayersDialog"
-          class="w-16 h-16 bg-[#F6F1D4] text-[#2A2A2A] rounded-full flex items-center justify-center shadow-[4px_4px_0_#2A2A2A] active:translate-y-1 active:translate-x-1 active:shadow-none transition-all"
-        >
-          <UsersIcon class="w-8 h-8 stroke-2" />
-        </button>
+        <div class="w-16 h-16">
+          <button
+            @click="openPlayersDialog"
+            class="w-full h-full bg-[#F6F1D4] text-[#2A2A2A] rounded-full flex items-center justify-center shadow-[4px_4px_0_#2A2A2A] active:translate-y-1 active:translate-x-1 active:shadow-none transition-all"
+          >
+            <UsersIcon class="w-8 h-8 stroke-2" />
+          </button>
+        </div>
       </div>
 
       <div class="w-full flex flex-col items-center my-4">
