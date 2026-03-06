@@ -360,8 +360,17 @@ const nextRound = () => {
 
 <template>
   <div
-    class="min-h-screen bg-slate-900 text-slate-100 font-sans flex flex-col items-center py-8 px-4 relative"
+    class="min-h-screen bg-slate-900 text-slate-100 font-sans flex flex-col items-center pt-20 pb-8 px-4 relative"
   >
+    <button
+      v-if="currentPlayer?.is_dealer && isJoined"
+      @click="undo"
+      title="Undo"
+      class="absolute top-6 left-4 sm:left-6 p-3 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-red-400 transition-all rounded-full active:scale-95 shadow-lg flex items-center justify-center z-10"
+    >
+      <ArrowUturnLeftIcon class="w-6 h-6" />
+    </button>
+
     <div v-if="isJoined" class="w-full max-w-md flex flex-col gap-6">
       <div class="bg-slate-800 rounded-2xl shadow-xl p-6 border border-slate-700">
         <div class="flex items-center justify-between mb-4">
@@ -462,34 +471,24 @@ const nextRound = () => {
         v-if="currentPlayer?.is_dealer"
         class="bg-blue-900/20 border border-blue-500/30 rounded-2xl p-6"
       >
-        <h3
-          class="text-blue-400 font-bold text-sm uppercase tracking-wider mb-4 flex items-center gap-2"
-        >
-          <StarIcon class="w-4 h-4" /> Dealer Controls
-        </h3>
-        <div class="flex flex-col sm:flex-row gap-3">
+        <div class="flex flex-col gap-3">
           <button
-            @click="undo"
-            class="w-full sm:w-auto flex items-center justify-center gap-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/50 text-red-400 transition-colors font-semibold py-3 px-6 rounded-xl active:scale-95 disabled:opacity-50"
+            @click="room?.round === 'show_down' ? openWinnerDialog() : proceedRound()"
+            class="w-full flex items-center justify-center gap-2 transition-all py-3 px-4 rounded-xl active:scale-95"
+            :class="
+              room?.round === 'show_down'
+                ? 'bg-gradient-to-br from-yellow-400 to-amber-600 hover:to-amber-500 text-slate-900 font-black shadow-lg shadow-amber-900/20'
+                : 'bg-blue-600/80 hover:bg-blue-500 text-white font-semibold'
+            "
           >
-            <ArrowUturnLeftIcon class="w-5 h-5" /> Undo
-          </button>
-
-          <button
-            @click="proceedRound"
-            :disabled="room?.round === 'show_down'"
-            class="w-full sm:flex-1 flex items-center justify-center gap-2 bg-blue-600/80 hover:bg-blue-500 transition-colors text-white font-semibold py-3 px-4 rounded-xl active:scale-95 disabled:opacity-50"
-          >
-            <ForwardIcon class="w-5 h-5" /> Continue
-          </button>
-
-          <button
-            @click="openWinnerDialog"
-            :disabled="room?.round !== 'show_down'"
-            class="w-full sm:flex-1 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-yellow-400 to-amber-600 hover:to-amber-500 transition-colors text-slate-900 font-black py-3 px-4 rounded-xl shadow-lg shadow-amber-900/20 active:scale-95 disabled:opacity-50"
-          >
-            <TrophyIcon class="w-6 h-6" />
-            <span>Give Pot</span>
+            <template v-if="room?.round === 'show_down'">
+              <TrophyIcon class="w-6 h-6" />
+              <span>Give Pot</span>
+            </template>
+            <template v-else>
+              <ForwardIcon class="w-5 h-5" />
+              <span>Continue</span>
+            </template>
           </button>
         </div>
       </div>
