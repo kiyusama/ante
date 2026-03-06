@@ -363,6 +363,7 @@ const nextRound = () => {
     class="min-h-screen bg-[#7A3E53] text-[#F6F1D4] font-mono flex flex-col items-center py-8 px-4 relative uppercase tracking-wider"
   >
     <div v-if="isJoined" class="w-full max-w-sm flex flex-col gap-6 mt-4">
+      
       <div class="w-full flex justify-between items-center mb-6">
         <div class="w-16 h-16">
           <button
@@ -498,43 +499,21 @@ const nextRound = () => {
         @close="closeWinnerDialog"
         class="relative z-50 font-mono tracking-wider uppercase"
       >
-        <TransitionChild
-          as="template"
-          enter="duration-300 ease-out"
-          enter-from="opacity-0"
-          enter-to="opacity-100"
-          leave="duration-200 ease-in"
-          leave-from="opacity-100"
-          leave-to="opacity-0"
-        >
+        <TransitionChild as="template" enter="duration-300 ease-out" enter-from="opacity-0" enter-to="opacity-100" leave="duration-200 ease-in" leave-from="opacity-100" leave-to="opacity-0">
           <div class="fixed inset-0 bg-black/80 backdrop-blur-sm" />
         </TransitionChild>
 
         <div class="fixed inset-0 overflow-y-auto">
           <div class="flex min-h-full items-center justify-center p-4 text-center">
-            <TransitionChild
-              as="template"
-              enter="duration-300 ease-out"
-              enter-from="opacity-0 scale-95"
-              enter-to="opacity-100 scale-100"
-              leave="duration-200 ease-in"
-              leave-from="opacity-100 scale-100"
-              leave-to="opacity-0 scale-95"
-            >
+            <TransitionChild as="template" enter="duration-300 ease-out" enter-from="opacity-0 scale-95" enter-to="opacity-100 scale-100" leave="duration-200 ease-in" leave-from="opacity-100 scale-100" leave-to="opacity-0 scale-95">
               <DialogPanel
                 class="w-full max-w-sm transform overflow-hidden rounded-[2rem] bg-[#2A2A2A] p-6 text-left align-middle shadow-2xl transition-all border border-[#F6F1D4]/10"
               >
-                <DialogTitle
-                  as="h3"
-                  class="text-2xl font-normal leading-6 text-[#F6F1D4] mb-6 text-center"
-                >
+                <DialogTitle as="h3" class="text-2xl font-normal leading-6 text-[#F6F1D4] mb-6 text-center">
                   Select Winners
                 </DialogTitle>
 
-                <div
-                  v-if="!room?.pots || room.pots.length === 0"
-                  class="text-[#F6F1D4]/50 text-sm mb-4 text-center"
-                >
+                <div v-if="!room?.pots || room.pots.length === 0" class="text-[#F6F1D4]/50 text-sm mb-4 text-center">
                   No pots available.
                 </div>
 
@@ -545,9 +524,7 @@ const nextRound = () => {
                     class="bg-[#7A3E53]/30 p-4 rounded-2xl border border-[#F6F1D4]/10"
                   >
                     <div class="flex justify-between items-end mb-4">
-                      <span class="text-sm text-[#F6F1D4]/70">{{
-                        index === 0 ? 'Main Pot' : `Side Pot ${index}`
-                      }}</span>
+                      <span class="text-sm text-[#F6F1D4]/70">{{ index === 0 ? 'Main Pot' : `Side Pot ${index}` }}</span>
                       <span class="text-2xl text-[#B08B42]">{{ pot.amount }}</span>
                     </div>
 
@@ -557,11 +534,7 @@ const nextRound = () => {
                         :key="playerName"
                         @click="winners[index] = playerName"
                         class="w-full flex items-center justify-between p-3 rounded-xl border transition-all active:scale-95"
-                        :class="
-                          winners[index] === playerName
-                            ? 'bg-[#B08B42] border-[#B08B42] text-[#F6F1D4]'
-                            : 'bg-transparent border-[#F6F1D4]/20 text-[#F6F1D4]/70'
-                        "
+                        :class="winners[index] === playerName ? 'bg-[#B08B42] border-[#B08B42] text-[#F6F1D4]' : 'bg-transparent border-[#F6F1D4]/20 text-[#F6F1D4]/70'"
                       >
                         <span class="text-lg">{{ playerName }}</span>
                         <span v-if="winners[index] === playerName">★</span>
@@ -571,17 +544,10 @@ const nextRound = () => {
                 </div>
 
                 <div class="mt-8 flex gap-3">
-                  <button
-                    @click="closeWinnerDialog"
-                    class="flex-1 bg-transparent border border-[#F6F1D4]/30 text-[#F6F1D4] py-3 rounded-2xl active:scale-95 transition-transform"
-                  >
+                  <button @click="closeWinnerDialog" class="flex-1 bg-transparent border border-[#F6F1D4]/30 text-[#F6F1D4] py-3 rounded-2xl active:scale-95 transition-transform">
                     Cancel
                   </button>
-                  <button
-                    @click="pushPots"
-                    :disabled="!room?.pots || Object.keys(winners).length !== room.pots.length"
-                    class="flex-1 bg-[#B08B42] text-[#F6F1D4] py-3 rounded-2xl disabled:opacity-50 active:scale-95 transition-transform"
-                  >
+                  <button @click="pushPots" :disabled="!room?.pots || Object.keys(winners).length !== room.pots.length" class="flex-1 bg-[#B08B42] text-[#F6F1D4] py-3 rounded-2xl disabled:opacity-50 active:scale-95 transition-transform">
                     Confirm
                   </button>
                 </div>
@@ -593,69 +559,27 @@ const nextRound = () => {
     </TransitionRoot>
 
     <TransitionRoot appear :show="isBetDialogOpen" as="template">
-      <Dialog
-        as="div"
-        @close="closeBetDialog"
-        class="relative z-50 font-mono tracking-wider uppercase"
-      >
-        <TransitionChild
-          as="template"
-          enter="duration-300 ease-out"
-          enter-from="opacity-0"
-          enter-to="opacity-100"
-          leave="duration-200 ease-in"
-          leave-from="opacity-100"
-          leave-to="opacity-0"
-        >
+      <Dialog as="div" @close="closeBetDialog" class="relative z-50 font-mono tracking-wider uppercase">
+        <TransitionChild as="template" enter="duration-300 ease-out" enter-from="opacity-0" enter-to="opacity-100" leave="duration-200 ease-in" leave-from="opacity-100" leave-to="opacity-0">
           <div class="fixed inset-0 bg-black/80 backdrop-blur-sm" />
         </TransitionChild>
 
         <div class="fixed inset-0 overflow-y-auto">
           <div class="flex min-h-full items-center justify-center p-4 text-center">
-            <TransitionChild
-              as="template"
-              enter="duration-300 ease-out"
-              enter-from="opacity-0 scale-95"
-              enter-to="opacity-100 scale-100"
-              leave="duration-200 ease-in"
-              leave-from="opacity-100 scale-100"
-              leave-to="opacity-0 scale-95"
-            >
-              <DialogPanel
-                class="w-full max-w-sm transform overflow-hidden rounded-[2rem] bg-[#2A2A2A] p-8 text-center align-middle shadow-2xl transition-all border border-[#F6F1D4]/10"
-              >
+            <TransitionChild as="template" enter="duration-300 ease-out" enter-from="opacity-0 scale-95" enter-to="opacity-100 scale-100" leave="duration-200 ease-in" leave-from="opacity-100 scale-100" leave-to="opacity-0 scale-95">
+              <DialogPanel class="w-full max-w-sm transform overflow-hidden rounded-[2rem] bg-[#2A2A2A] p-8 text-center align-middle shadow-2xl transition-all border border-[#F6F1D4]/10">
                 <DialogTitle as="h3" class="text-3xl font-normal leading-6 text-[#F6F1D4] mb-8">
                   Bet Amount
                 </DialogTitle>
 
                 <div class="space-y-4">
-                  <input
-                    type="number"
-                    v-model.number="betAmount"
-                    :min="room?.current_highest_bet"
-                    :max="currentPlayer?.chips"
-                    @keyup.enter="bet"
-                    class="w-full bg-[#7A3E53]/30 border border-[#F6F1D4]/30 rounded-2xl px-4 py-4 text-4xl text-[#F6F1D4] text-center focus:outline-none focus:border-[#B08B42] transition-all"
-                    :placeholder="room?.current_highest_bet"
-                  />
-                  <p class="text-sm text-[#F6F1D4]/70">
-                    Max: <span class="text-[#B08B42]">{{ currentPlayer?.chips }}</span>
-                  </p>
+                  <input type="number" v-model.number="betAmount" :min="room?.current_highest_bet" :max="currentPlayer?.chips" @keyup.enter="bet" class="w-full bg-[#7A3E53]/30 border border-[#F6F1D4]/30 rounded-2xl px-4 py-4 text-4xl text-[#F6F1D4] text-center focus:outline-none focus:border-[#B08B42] transition-all" :placeholder="room?.current_highest_bet" />
+                  <p class="text-sm text-[#F6F1D4]/70">Max: <span class="text-[#B08B42]">{{ currentPlayer?.chips }}</span></p>
                 </div>
 
                 <div class="mt-8 flex gap-3">
-                  <button
-                    @click="closeBetDialog"
-                    class="flex-1 bg-transparent border border-[#F6F1D4]/30 text-[#F6F1D4] py-3 rounded-2xl active:scale-95 transition-transform"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    @click="bet"
-                    class="flex-1 bg-[#B08B42] text-[#F6F1D4] py-3 rounded-2xl active:scale-95 transition-transform"
-                  >
-                    Bet
-                  </button>
+                  <button @click="closeBetDialog" class="flex-1 bg-transparent border border-[#F6F1D4]/30 text-[#F6F1D4] py-3 rounded-2xl active:scale-95 transition-transform">Cancel</button>
+                  <button @click="bet" class="flex-1 bg-[#B08B42] text-[#F6F1D4] py-3 rounded-2xl active:scale-95 transition-transform">Bet</button>
                 </div>
               </DialogPanel>
             </TransitionChild>
@@ -665,65 +589,29 @@ const nextRound = () => {
     </TransitionRoot>
 
     <TransitionRoot appear :show="isPlayersDialogOpen" as="template">
-      <Dialog
-        as="div"
-        @close="closePlayersDialog"
-        class="relative z-50 font-mono tracking-wider uppercase"
-      >
-        <TransitionChild
-          as="template"
-          enter="duration-300 ease-out"
-          enter-from="opacity-0"
-          enter-to="opacity-100"
-          leave="duration-200 ease-in"
-          leave-from="opacity-100"
-          leave-to="opacity-0"
-        >
+      <Dialog as="div" @close="closePlayersDialog" class="relative z-50 font-mono tracking-wider uppercase">
+        <TransitionChild as="template" enter="duration-300 ease-out" enter-from="opacity-0" enter-to="opacity-100" leave="duration-200 ease-in" leave-from="opacity-100" leave-to="opacity-0">
           <div class="fixed inset-0 bg-black/80 backdrop-blur-sm" />
         </TransitionChild>
 
         <div class="fixed inset-0 overflow-y-auto">
           <div class="flex min-h-full items-center justify-center p-4 text-center">
-            <TransitionChild
-              as="template"
-              enter="duration-300 ease-out"
-              enter-from="opacity-0 scale-95"
-              enter-to="opacity-100 scale-100"
-              leave="duration-200 ease-in"
-              leave-from="opacity-100 scale-100"
-              leave-to="opacity-0 scale-95"
-            >
-              <DialogPanel
-                class="w-full max-w-sm transform overflow-hidden rounded-[2rem] bg-[#2A2A2A] p-6 text-left align-middle shadow-2xl transition-all border border-[#F6F1D4]/10"
-              >
-                <DialogTitle
-                  as="h3"
-                  class="text-2xl font-normal leading-6 text-[#F6F1D4] mb-6 flex justify-between items-center"
-                >
+            <TransitionChild as="template" enter="duration-300 ease-out" enter-from="opacity-0 scale-95" enter-to="opacity-100 scale-100" leave="duration-200 ease-in" leave-from="opacity-100 scale-100" leave-to="opacity-0 scale-95">
+              <DialogPanel class="w-full max-w-sm transform overflow-hidden rounded-[2rem] bg-[#2A2A2A] p-6 text-left align-middle shadow-2xl transition-all border border-[#F6F1D4]/10">
+                <DialogTitle as="h3" class="text-2xl font-normal leading-6 text-[#F6F1D4] mb-6 flex justify-between items-center">
                   <span>Players</span>
                   <span class="text-sm text-[#B08B42]">Total {{ room?.player_count || 0 }}</span>
                 </DialogTitle>
 
                 <div class="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
-                  <div
-                    v-for="(player, pName) in room.players"
-                    :key="pName"
-                    class="bg-[#7A3E53]/30 p-4 rounded-xl border border-[#F6F1D4]/10 flex items-center justify-between"
-                  >
+                  <div v-for="(player, pName) in room.players" :key="pName" class="bg-[#7A3E53]/30 p-4 rounded-xl border border-[#F6F1D4]/10 flex items-center justify-between">
                     <div class="flex flex-col gap-1">
                       <div class="flex items-center gap-2">
                         <span class="text-lg text-[#F6F1D4]">{{ pName }}</span>
                         <span v-if="player.is_dealer" class="text-[#B08B42] text-sm">★</span>
                       </div>
                       <div>
-                        <span
-                          class="text-xs px-2 py-0.5 rounded-full border border-[#F6F1D4]/30"
-                          :class="{
-                            'text-[#B08B42] border-[#B08B42]': player.state === 'active',
-                            'text-red-400 border-red-400/50': player.state === 'all_in',
-                            'text-[#F6F1D4]/50': player.state === 'fold' || player.state === 'dead',
-                          }"
-                        >
+                        <span class="text-xs px-2 py-0.5 rounded-full border border-[#F6F1D4]/30" :class="{ 'text-[#B08B42] border-[#B08B42]': player.state === 'active', 'text-red-400 border-red-400/50': player.state === 'all_in', 'text-[#F6F1D4]/50': player.state === 'fold' || player.state === 'dead' }">
                           {{ player.state }}
                         </span>
                       </div>
@@ -731,20 +619,13 @@ const nextRound = () => {
 
                     <div class="text-right flex flex-col items-end">
                       <div class="text-[#F6F1D4] text-xl">{{ player.chips }}</div>
-                      <div v-if="player.current_bet > 0" class="text-xs text-[#B08B42] mt-1">
-                        Bet: {{ player.current_bet }}
-                      </div>
+                      <div v-if="player.current_bet > 0" class="text-xs text-[#B08B42] mt-1">Bet: {{ player.current_bet }}</div>
                     </div>
                   </div>
                 </div>
 
                 <div class="mt-8">
-                  <button
-                    @click="closePlayersDialog"
-                    class="w-full bg-transparent border border-[#F6F1D4]/30 text-[#F6F1D4] py-3 rounded-2xl active:scale-95 transition-transform"
-                  >
-                    Close
-                  </button>
+                  <button @click="closePlayersDialog" class="w-full bg-transparent border border-[#F6F1D4]/30 text-[#F6F1D4] py-3 rounded-2xl active:scale-95 transition-transform">Close</button>
                 </div>
               </DialogPanel>
             </TransitionChild>
