@@ -223,7 +223,7 @@ const proceedRound = async () => {
 
   //1人しかactiveが残ってないならshowdownへ
   if (activePlayerCount <= 1) {
-    updates.round = 'showdown'
+    updates.round = 'show_down'
   }
 
   await update(roomRef, updates)
