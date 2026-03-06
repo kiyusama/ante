@@ -360,175 +360,139 @@ const nextRound = () => {
 
 <template>
   <div
-    class="min-h-screen bg-slate-900 text-slate-100 font-sans flex flex-col items-center py-8 px-4 relative"
+    class="min-h-screen bg-[#7A3E53] text-[#F6F1D4] font-mono flex flex-col items-center py-8 px-4 relative uppercase tracking-wider"
   >
-    <div v-if="isJoined" class="w-full max-w-md flex flex-col gap-6">
-      <div class="bg-slate-800 rounded-2xl shadow-xl p-6 border border-slate-700">
-        <div class="flex items-center justify-between mb-4">
-          <span class="text-slate-400 font-medium tracking-wider text-sm uppercase"
-            >Room status</span
-          >
-          <span
-            v-if="room.round !== 'waiting'"
-            class="bg-indigo-500/20 text-indigo-300 px-3 py-1 rounded-full text-xs font-bold uppercase border border-indigo-500/30 ml-3"
-          >
-            {{ room.round }}
-          </span>
-          <span
-            v-if="currentPlayer?.is_dealer"
-            class="bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1"
-          >
-            <StarIcon class="w-4 h-4" /> Dealer
-          </span>
-        </div>
+    <div v-if="isJoined" class="w-full max-w-sm flex flex-col gap-6 mt-4">
+      <div class="w-full flex justify-between items-center mb-6">
+        <button
+          @click="undo"
+          :disabled="!currentPlayer?.is_dealer"
+          class="w-16 h-16 bg-[#F6F1D4] text-[#2A2A2A] rounded-full flex items-center justify-center shadow-[4px_4px_0_#2A2A2A] active:translate-y-1 active:translate-x-1 active:shadow-none transition-all disabled:opacity-50"
+        >
+          <ArrowUturnLeftIcon class="w-8 h-8 stroke-2" />
+        </button>
 
-        <div class="space-y-3">
-          <div
-            class="flex justify-between items-center bg-slate-900/50 p-4 rounded-xl border border-slate-700/50"
-          >
-            <div class="flex items-center gap-2 text-slate-300">
-              <CurrencyDollarIcon class="w-6 h-6 text-yellow-500" />
-              <span class="font-semibold">Pot</span>
-            </div>
-            <span class="text-3xl font-black text-yellow-400">{{ room?.pot || 0 }}</span>
-          </div>
-          <div
-            class="flex justify-between items-center bg-slate-900/50 p-4 rounded-xl border border-slate-700/50"
-          >
-            <div class="flex items-center gap-2 text-slate-300">
-              <CircleStackIcon class="w-6 h-6 text-emerald-500" />
-              <span class="font-semibold">My Chips</span>
-            </div>
-            <span class="text-3xl font-black text-emerald-400">{{
-              currentPlayer?.chips || 0
-            }}</span>
-          </div>
-        </div>
+        <h1 class="text-5xl font-normal tracking-widest text-[#F6F1D4]">ANTE</h1>
 
-        <div class="mt-4 pt-4 border-t border-slate-700/50">
-          <button
-            @click="openPlayersDialog"
-            class="w-full flex items-center justify-center gap-2 bg-slate-700 hover:bg-slate-600 transition-colors border border-slate-600 text-white font-bold py-3 px-4 rounded-xl active:scale-95"
-          >
-            <UsersIcon class="w-5 h-5 text-slate-300" />
-            <span>Players List</span>
-          </button>
-        </div>
+        <button
+          @click="openPlayersDialog"
+          class="w-16 h-16 bg-[#F6F1D4] text-[#2A2A2A] rounded-full flex items-center justify-center shadow-[4px_4px_0_#2A2A2A] active:translate-y-1 active:translate-x-1 active:shadow-none transition-all"
+        >
+          <UsersIcon class="w-8 h-8 stroke-2" />
+        </button>
       </div>
 
-      <div class="bg-slate-800 rounded-2xl shadow-xl p-6 border border-slate-700">
+      <div class="w-full flex flex-col items-center my-4">
         <div
-          v-if="room?.round === 'waiting'"
-          class="flex flex-col items-center justify-center py-4"
+          class="w-full max-w-[280px] bg-[#2A2A2A] flex flex-col items-center justify-center pt-4 pb-2"
+          style="clip-path: polygon(25% 0%, 75% 0%, 100% 100%, 0% 100%)"
         >
-          <button
-            @click="declareDealer"
-            class="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 transition-colors text-white font-bold py-4 px-6 rounded-xl shadow-lg shadow-blue-900/20 active:scale-95"
-          >
-            <StarIcon class="w-6 h-6" /> Dealer
-          </button>
+          <span class="text-[#F6F1D4] text-sm tracking-widest">POT</span>
+          <span class="text-[#F6F1D4] text-4xl font-normal mt-1">{{ room?.pot || 0 }}</span>
         </div>
 
-        <div v-else class="space-y-5">
-          <div class="flex gap-3 pt-2">
-            <button
-              @click="call"
-              :disabled="currentPlayer?.state !== 'active'"
-              class="flex-1 flex flex-col items-center justify-center gap-1 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-slate-700 disabled:active:scale-100 transition-colors border border-slate-600 text-white font-bold py-3 px-4 rounded-xl active:scale-95"
-            >
-              <CheckCircleIcon
-                class="w-6 h-6"
-                :class="currentPlayer?.state !== 'active' ? 'text-slate-400' : 'text-emerald-400'"
-              />
-              <span>Call {{ callAmount > 0 ? '+' + callAmount : '' }}</span>
-            </button>
+        <div
+          class="w-full max-w-[320px] bg-[#F6F1D4] text-[#2A2A2A] flex items-center justify-center py-4 my-2"
+        >
+          <span class="text-3xl font-normal tracking-widest">
+            {{ room?.round !== 'waiting' ? room.round.replace('_', ' ') : 'WAITING' }}
+          </span>
+        </div>
 
-            <button
-              @click="openBetDialog"
-              :disabled="currentPlayer?.state !== 'active'"
-              class="flex-1 flex flex-col items-center justify-center gap-1 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-indigo-600 disabled:active:scale-100 transition-colors border border-indigo-500 text-white font-bold py-3 px-4 rounded-xl active:scale-95 shadow-lg shadow-indigo-900/20 disabled:shadow-none"
-            >
-              <ArrowUpCircleIcon
-                class="w-6 h-6"
-                :class="currentPlayer?.state !== 'active' ? 'text-slate-400' : 'text-indigo-300'"
-              />
-              <span>Bet / Raise</span>
-            </button>
-          </div>
+        <div
+          class="w-full max-w-[280px] bg-[#2A2A2A] flex flex-col items-center justify-center pt-2 pb-4"
+          style="clip-path: polygon(0% 0%, 100% 0%, 75% 100%, 25% 100%)"
+        >
+          <span class="text-[#F6F1D4] text-sm tracking-widest capitalize">My chip</span>
+          <span class="text-[#F6F1D4] text-4xl font-normal mt-1">{{
+            currentPlayer?.chips || 0
+          }}</span>
         </div>
       </div>
 
-      <div
-        v-if="currentPlayer?.is_dealer"
-        class="bg-blue-900/20 border border-blue-500/30 rounded-2xl p-6"
-      >
-        <h3
-          class="text-blue-400 font-bold text-sm uppercase tracking-wider mb-4 flex items-center gap-2"
+      <div v-if="room?.round !== 'waiting'" class="w-full flex gap-4 mt-8">
+        <button
+          @click="call"
+          :disabled="currentPlayer?.state !== 'active'"
+          class="flex-1 bg-[#B08B42] text-[#F6F1D4] rounded-[3rem] py-6 flex flex-col items-center justify-center disabled:opacity-50 active:scale-95 transition-transform"
         >
-          <StarIcon class="w-4 h-4" /> Dealer Controls
-        </h3>
-        <div class="flex flex-col sm:flex-row gap-3">
-          <button
-            @click="undo"
-            class="w-full sm:w-auto flex items-center justify-center gap-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/50 text-red-400 transition-colors font-semibold py-3 px-6 rounded-xl active:scale-95 disabled:opacity-50"
-          >
-            <ArrowUturnLeftIcon class="w-5 h-5" /> Undo
-          </button>
+          <span class="text-3xl font-normal tracking-wider">Call</span>
+          <span v-if="callAmount > 0" class="text-xl mt-1">+{{ callAmount }}</span>
+        </button>
 
-          <button
-            @click="proceedRound"
-            :disabled="room?.round === 'show_down'"
-            class="w-full sm:flex-1 flex items-center justify-center gap-2 bg-blue-600/80 hover:bg-blue-500 transition-colors text-white font-semibold py-3 px-4 rounded-xl active:scale-95 disabled:opacity-50"
-          >
-            <ForwardIcon class="w-5 h-5" /> Continue
-          </button>
+        <button
+          @click="openBetDialog"
+          :disabled="currentPlayer?.state !== 'active'"
+          class="flex-1 bg-[#B08B42] text-[#F6F1D4] rounded-[3rem] py-6 flex flex-col items-center justify-center disabled:opacity-50 active:scale-95 transition-transform"
+        >
+          <span class="text-3xl font-normal tracking-wider">BET</span>
+        </button>
+      </div>
 
-          <button
-            @click="openWinnerDialog"
-            :disabled="room?.round !== 'show_down'"
-            class="w-full sm:flex-1 flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-yellow-400 to-amber-600 hover:to-amber-500 transition-colors text-slate-900 font-black py-3 px-4 rounded-xl shadow-lg shadow-amber-900/20 active:scale-95 disabled:opacity-50"
-          >
-            <TrophyIcon class="w-6 h-6" />
-            <span>Give Pot</span>
-          </button>
-        </div>
+      <div v-if="room?.round === 'waiting'" class="w-full mt-8">
+        <button
+          @click="declareDealer"
+          class="w-full bg-[#B08B42] text-[#F6F1D4] rounded-[3rem] py-6 flex items-center justify-center active:scale-95 transition-transform"
+        >
+          <span class="text-3xl font-normal tracking-wider">Dealer</span>
+        </button>
+      </div>
+
+      <div v-if="currentPlayer?.is_dealer" class="w-full flex flex-col gap-3 mt-4">
+        <button
+          @click="proceedRound"
+          :disabled="room?.round === 'show_down'"
+          class="w-full bg-[#2A2A2A] text-[#F6F1D4] rounded-[3rem] py-6 flex items-center justify-center active:scale-95 transition-transform disabled:opacity-50"
+        >
+          <span class="text-3xl font-normal tracking-wider">Next Round</span>
+        </button>
+
+        <button
+          v-if="room?.round === 'show_down'"
+          @click="openWinnerDialog"
+          class="w-full bg-[#B08B42] text-[#F6F1D4] rounded-[3rem] py-4 flex items-center justify-center active:scale-95 transition-transform"
+        >
+          <span class="text-2xl font-normal tracking-wider">Give Pot</span>
+        </button>
       </div>
     </div>
 
     <div
       v-else
-      class="w-full max-w-sm m-auto bg-slate-800 rounded-2xl shadow-2xl p-8 border border-slate-700 mt-20"
+      class="w-full max-w-sm m-auto bg-[#2A2A2A] rounded-3xl shadow-2xl p-8 border border-[#F6F1D4]/10 mt-20"
     >
       <div class="text-center mb-8">
-        <div
-          class="bg-indigo-500/20 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 border border-indigo-500/30"
-        >
-          <CircleStackIcon class="w-8 h-8 text-indigo-400" />
-        </div>
-        <h1 class="text-2xl font-black tracking-tight text-white">Join Table</h1>
+        <h1 class="text-4xl font-normal tracking-widest text-[#F6F1D4] mb-2">Join Table</h1>
       </div>
 
-      <div class="space-y-4">
+      <div class="space-y-6">
         <div>
-          <label class="block text-sm font-medium text-slate-400 mb-1">Player Name</label>
+          <label class="block text-sm font-normal text-[#F6F1D4]/70 mb-2 tracking-widest"
+            >Player Name</label
+          >
           <input
             v-model="playerName"
             @keyup.enter="joinGame"
-            class="w-full bg-slate-900 border border-slate-600 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all placeholder-slate-500"
+            class="w-full bg-[#7A3E53]/50 border border-[#F6F1D4]/30 rounded-xl px-4 py-4 text-[#F6F1D4] text-xl focus:outline-none focus:border-[#B08B42] transition-all placeholder-[#F6F1D4]/30"
+            placeholder="Enter Name"
           />
         </div>
         <button
           @click="joinGame"
           :disabled="!playerName"
-          class="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-700 disabled:text-slate-500 transition-colors text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-indigo-900/20 active:scale-95"
+          class="w-full bg-[#B08B42] hover:bg-[#A07A30] disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-[#F6F1D4] py-4 px-4 rounded-[2rem] active:scale-95 flex items-center justify-center"
         >
-          Join Game <ArrowRightEndOnRectangleIcon class="w-5 h-5" />
+          <span class="text-2xl tracking-widest">Join</span>
         </button>
       </div>
     </div>
 
     <TransitionRoot appear :show="isWinnerDialogOpen" as="template">
-      <Dialog as="div" @close="closeWinnerDialog" class="relative z-50">
+      <Dialog
+        as="div"
+        @close="closeWinnerDialog"
+        class="relative z-50 font-mono tracking-wider uppercase"
+      >
         <TransitionChild
           as="template"
           enter="duration-300 ease-out"
@@ -538,7 +502,7 @@ const nextRound = () => {
           leave-from="opacity-100"
           leave-to="opacity-0"
         >
-          <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" />
+          <div class="fixed inset-0 bg-black/80 backdrop-blur-sm" />
         </TransitionChild>
 
         <div class="fixed inset-0 overflow-y-auto">
@@ -553,33 +517,33 @@ const nextRound = () => {
               leave-to="opacity-0 scale-95"
             >
               <DialogPanel
-                class="w-full max-w-sm transform overflow-hidden rounded-2xl bg-slate-800 p-6 text-left align-middle shadow-2xl transition-all border border-slate-700"
+                class="w-full max-w-sm transform overflow-hidden rounded-[2rem] bg-[#2A2A2A] p-6 text-left align-middle shadow-2xl transition-all border border-[#F6F1D4]/10"
               >
                 <DialogTitle
                   as="h3"
-                  class="text-xl font-black leading-6 text-white mb-4 flex items-center gap-2"
+                  class="text-2xl font-normal leading-6 text-[#F6F1D4] mb-6 text-center"
                 >
-                  <TrophyIcon class="w-6 h-6 text-yellow-500" /> Select Winners
+                  Select Winners
                 </DialogTitle>
 
                 <div
                   v-if="!room?.pots || room.pots.length === 0"
-                  class="text-slate-400 text-sm mb-4"
+                  class="text-[#F6F1D4]/50 text-sm mb-4 text-center"
                 >
-                  No pots available. Please ensure the round is completed.
+                  No pots available.
                 </div>
 
-                <div v-else class="space-y-5 max-h-[60vh] overflow-y-auto pr-2">
+                <div v-else class="space-y-5 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
                   <div
                     v-for="(pot, index) in room.pots"
                     :key="index"
-                    class="bg-slate-900/50 p-4 rounded-xl border border-slate-700/50"
+                    class="bg-[#7A3E53]/30 p-4 rounded-2xl border border-[#F6F1D4]/10"
                   >
-                    <div class="flex justify-between items-end mb-3">
-                      <span class="text-sm font-bold text-slate-300">
-                        {{ index === 0 ? 'Main Pot' : `Side Pot ${index}` }}
-                      </span>
-                      <span class="text-lg font-black text-yellow-400">{{ pot.amount }} chips</span>
+                    <div class="flex justify-between items-end mb-4">
+                      <span class="text-sm text-[#F6F1D4]/70">{{
+                        index === 0 ? 'Main Pot' : `Side Pot ${index}`
+                      }}</span>
+                      <span class="text-2xl text-[#B08B42]">{{ pot.amount }}</span>
                     </div>
 
                     <div class="space-y-2">
@@ -587,36 +551,33 @@ const nextRound = () => {
                         v-for="playerName in pot.participants"
                         :key="playerName"
                         @click="winners[index] = playerName"
-                        class="w-full flex items-center justify-between p-3 rounded-lg border transition-all active:scale-[0.98]"
+                        class="w-full flex items-center justify-between p-3 rounded-xl border transition-all active:scale-95"
                         :class="
                           winners[index] === playerName
-                            ? 'bg-amber-500/20 border-amber-500 text-white shadow-[0_0_15px_rgba(245,158,11,0.2)]'
-                            : 'bg-slate-800 border-slate-600 text-slate-400 hover:bg-slate-700 hover:text-slate-200'
+                            ? 'bg-[#B08B42] border-[#B08B42] text-[#F6F1D4]'
+                            : 'bg-transparent border-[#F6F1D4]/20 text-[#F6F1D4]/70'
                         "
                       >
-                        <span class="font-bold">{{ playerName }}</span>
-                        <CheckCircleIcon
-                          v-if="winners[index] === playerName"
-                          class="w-5 h-5 text-amber-500"
-                        />
+                        <span class="text-lg">{{ playerName }}</span>
+                        <span v-if="winners[index] === playerName">★</span>
                       </button>
                     </div>
                   </div>
                 </div>
 
-                <div class="mt-6 flex gap-3">
+                <div class="mt-8 flex gap-3">
                   <button
                     @click="closeWinnerDialog"
-                    class="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 px-4 rounded-xl transition-colors active:scale-95"
+                    class="flex-1 bg-transparent border border-[#F6F1D4]/30 text-[#F6F1D4] py-3 rounded-2xl active:scale-95 transition-transform"
                   >
                     Cancel
                   </button>
                   <button
                     @click="pushPots"
                     :disabled="!room?.pots || Object.keys(winners).length !== room.pots.length"
-                    class="flex-1 bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-400 hover:to-amber-500 disabled:from-slate-700 disabled:to-slate-700 disabled:text-slate-500 disabled:cursor-not-allowed text-slate-900 font-black py-3 px-4 rounded-xl shadow-lg transition-all active:scale-95"
+                    class="flex-1 bg-[#B08B42] text-[#F6F1D4] py-3 rounded-2xl disabled:opacity-50 active:scale-95 transition-transform"
                   >
-                    Confirm Push
+                    Confirm
                   </button>
                 </div>
               </DialogPanel>
@@ -627,7 +588,11 @@ const nextRound = () => {
     </TransitionRoot>
 
     <TransitionRoot appear :show="isBetDialogOpen" as="template">
-      <Dialog as="div" @close="closeBetDialog" class="relative z-50">
+      <Dialog
+        as="div"
+        @close="closeBetDialog"
+        class="relative z-50 font-mono tracking-wider uppercase"
+      >
         <TransitionChild
           as="template"
           enter="duration-300 ease-out"
@@ -637,7 +602,7 @@ const nextRound = () => {
           leave-from="opacity-100"
           leave-to="opacity-0"
         >
-          <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" />
+          <div class="fixed inset-0 bg-black/80 backdrop-blur-sm" />
         </TransitionChild>
 
         <div class="fixed inset-0 overflow-y-auto">
@@ -652,48 +617,39 @@ const nextRound = () => {
               leave-to="opacity-0 scale-95"
             >
               <DialogPanel
-                class="w-full max-w-sm transform overflow-hidden rounded-2xl bg-slate-800 p-6 text-left align-middle shadow-2xl transition-all border border-slate-700"
+                class="w-full max-w-sm transform overflow-hidden rounded-[2rem] bg-[#2A2A2A] p-8 text-center align-middle shadow-2xl transition-all border border-[#F6F1D4]/10"
               >
-                <DialogTitle
-                  as="h3"
-                  class="text-xl font-black leading-6 text-white mb-4 flex items-center gap-2"
-                >
-                  <ArrowUpCircleIcon class="w-6 h-6 text-indigo-500" /> Bet Amount
+                <DialogTitle as="h3" class="text-3xl font-normal leading-6 text-[#F6F1D4] mb-8">
+                  Bet Amount
                 </DialogTitle>
 
                 <div class="space-y-4">
-                  <div>
-                    <label class="block text-xs font-medium text-slate-400 uppercase mb-2">
-                      Amount to Bet
-                    </label>
-                    <input
-                      type="number"
-                      v-model.number="betAmount"
-                      :min="room?.current_highest_bet"
-                      :max="currentPlayer?.chips"
-                      @keyup.enter="bet"
-                      class="w-full bg-slate-900 border border-slate-600 rounded-xl px-4 py-3 text-2xl font-black text-white text-center focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
-                      :placeholder="room?.current_highest_bet"
-                    />
-                  </div>
-
-                  <p class="text-xs text-center text-slate-400">
-                    Max: <span class="text-emerald-400">{{ currentPlayer?.chips }}</span> chips
+                  <input
+                    type="number"
+                    v-model.number="betAmount"
+                    :min="room?.current_highest_bet"
+                    :max="currentPlayer?.chips"
+                    @keyup.enter="bet"
+                    class="w-full bg-[#7A3E53]/30 border border-[#F6F1D4]/30 rounded-2xl px-4 py-4 text-4xl text-[#F6F1D4] text-center focus:outline-none focus:border-[#B08B42] transition-all"
+                    :placeholder="room?.current_highest_bet"
+                  />
+                  <p class="text-sm text-[#F6F1D4]/70">
+                    Max: <span class="text-[#B08B42]">{{ currentPlayer?.chips }}</span>
                   </p>
                 </div>
 
-                <div class="mt-6 flex gap-3">
+                <div class="mt-8 flex gap-3">
                   <button
                     @click="closeBetDialog"
-                    class="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 px-4 rounded-xl transition-colors active:scale-95"
+                    class="flex-1 bg-transparent border border-[#F6F1D4]/30 text-[#F6F1D4] py-3 rounded-2xl active:scale-95 transition-transform"
                   >
                     Cancel
                   </button>
                   <button
                     @click="bet"
-                    class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-indigo-900/20 transition-colors active:scale-95"
+                    class="flex-1 bg-[#B08B42] text-[#F6F1D4] py-3 rounded-2xl active:scale-95 transition-transform"
                   >
-                    Confirm Bet
+                    Bet
                   </button>
                 </div>
               </DialogPanel>
@@ -702,8 +658,13 @@ const nextRound = () => {
         </div>
       </Dialog>
     </TransitionRoot>
+
     <TransitionRoot appear :show="isPlayersDialogOpen" as="template">
-      <Dialog as="div" @close="closePlayersDialog" class="relative z-50">
+      <Dialog
+        as="div"
+        @close="closePlayersDialog"
+        class="relative z-50 font-mono tracking-wider uppercase"
+      >
         <TransitionChild
           as="template"
           enter="duration-300 ease-out"
@@ -713,7 +674,7 @@ const nextRound = () => {
           leave-from="opacity-100"
           leave-to="opacity-0"
         >
-          <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" />
+          <div class="fixed inset-0 bg-black/80 backdrop-blur-sm" />
         </TransitionChild>
 
         <div class="fixed inset-0 overflow-y-auto">
@@ -728,41 +689,34 @@ const nextRound = () => {
               leave-to="opacity-0 scale-95"
             >
               <DialogPanel
-                class="w-full max-w-sm transform overflow-hidden rounded-2xl bg-slate-800 p-6 text-left align-middle shadow-2xl transition-all border border-slate-700"
+                class="w-full max-w-sm transform overflow-hidden rounded-[2rem] bg-[#2A2A2A] p-6 text-left align-middle shadow-2xl transition-all border border-[#F6F1D4]/10"
               >
                 <DialogTitle
                   as="h3"
-                  class="text-xl font-black leading-6 text-white mb-4 flex items-center justify-between"
+                  class="text-2xl font-normal leading-6 text-[#F6F1D4] mb-6 flex justify-between items-center"
                 >
-                  <div class="flex items-center gap-2">
-                    <UsersIcon class="w-6 h-6 text-indigo-400" /> Players List
-                  </div>
-                  <span
-                    class="text-sm font-medium text-slate-400 bg-slate-900 px-3 py-1 rounded-full border border-slate-700"
-                  >
-                    Total: {{ room?.player_count || 0 }}
-                  </span>
+                  <span>Players</span>
+                  <span class="text-sm text-[#B08B42]">{{ room?.player_count || 0 }} Total</span>
                 </DialogTitle>
 
                 <div class="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
                   <div
                     v-for="(player, pName) in room.players"
                     :key="pName"
-                    class="bg-slate-900/50 p-4 rounded-xl border border-slate-700/50 flex items-center justify-between"
+                    class="bg-[#7A3E53]/30 p-4 rounded-xl border border-[#F6F1D4]/10 flex items-center justify-between"
                   >
                     <div class="flex flex-col gap-1">
                       <div class="flex items-center gap-2">
-                        <span class="font-bold text-slate-200">{{ pName }}</span>
-                        <StarIcon v-if="player.is_dealer" class="w-4 h-4 text-blue-400" />
+                        <span class="text-lg text-[#F6F1D4]">{{ pName }}</span>
+                        <span v-if="player.is_dealer" class="text-[#B08B42] text-sm">★</span>
                       </div>
                       <div>
                         <span
-                          class="text-xs font-bold px-2 py-0.5 rounded-full uppercase"
+                          class="text-xs px-2 py-0.5 rounded-full border border-[#F6F1D4]/30"
                           :class="{
-                            'bg-emerald-500/20 text-emerald-400': player.state === 'active',
-                            'bg-red-500/20 text-red-400': player.state === 'all_in',
-                            'bg-slate-700 text-slate-400': player.state === 'fold',
-                            'bg-slate-900 text-slate-600': player.state === 'dead',
+                            'text-[#B08B42] border-[#B08B42]': player.state === 'active',
+                            'text-red-400 border-red-400/50': player.state === 'all_in',
+                            'text-[#F6F1D4]/50': player.state === 'fold' || player.state === 'dead',
                           }"
                         >
                           {{ player.state }}
@@ -770,25 +724,19 @@ const nextRound = () => {
                       </div>
                     </div>
 
-                    <div class="text-right">
-                      <div class="flex items-center justify-end gap-1 text-emerald-400 font-black">
-                        <CircleStackIcon class="w-4 h-4" />
-                        {{ player.chips }}
-                      </div>
-                      <div
-                        v-if="player.current_bet > 0"
-                        class="text-xs text-yellow-500 font-medium mt-1"
-                      >
+                    <div class="text-right flex flex-col items-end">
+                      <div class="text-[#F6F1D4] text-xl">{{ player.chips }}</div>
+                      <div v-if="player.current_bet > 0" class="text-xs text-[#B08B42] mt-1">
                         Bet: {{ player.current_bet }}
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <div class="mt-6 flex gap-3">
+                <div class="mt-8">
                   <button
                     @click="closePlayersDialog"
-                    class="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 px-4 rounded-xl transition-colors active:scale-95"
+                    class="w-full bg-transparent border border-[#F6F1D4]/30 text-[#F6F1D4] py-3 rounded-2xl active:scale-95 transition-transform"
                   >
                     Close
                   </button>
