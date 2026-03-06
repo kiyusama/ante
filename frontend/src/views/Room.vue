@@ -403,7 +403,7 @@ const nextRound = () => {
           class="w-full max-w-[280px] bg-[#2A2A2A] flex flex-col items-center justify-center pt-2 pb-4"
           style="clip-path: polygon(0% 0%, 100% 0%, 75% 100%, 25% 100%)"
         >
-          <span class="text-[#F6F1D4] text-sm tracking-widest capitalize">My chip</span>
+          <span class="text-[#F6F1D4] text-sm tracking-widest capitalize">My chips</span>
           <span class="text-[#F6F1D4] text-4xl font-normal mt-1">{{
             currentPlayer?.chips || 0
           }}</span>
@@ -696,7 +696,7 @@ const nextRound = () => {
                   class="text-2xl font-normal leading-6 text-[#F6F1D4] mb-6 flex justify-between items-center"
                 >
                   <span>Players</span>
-                  <span class="text-sm text-[#B08B42]">{{ room?.player_count || 0 }} Total</span>
+                  <span class="text-sm text-[#B08B42]">Total {{ room?.player_count || 0 }}</span>
                 </DialogTitle>
 
                 <div class="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
